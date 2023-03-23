@@ -19,6 +19,11 @@
 	margin=0.5rem;
 }
 
+.main_buttons{
+	width: 150px; 
+	font-size: 0.6em;
+}
+
 .main_content{
 	border-style: ridge; 
 	position: absolute; 
