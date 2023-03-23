@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile_style.css') }}">
+{% endblock %}
+
+{% block body %}
+<h1>Профиль читателя</h1>
+<br>
+<table>
+    <tr>
+        <td>
+            <img src="static/image/Fon.jpg" class="image_user">
+        </td>
+        <td style="vertical-align: top; padding-left: 20px;">
+            <h1 class="name_user">Иванов Иван Иванович</h1>
+            <h5>&nbsp;Возраст: 18</h5>
+            <h5>&nbsp;Любимые жанры книг: фэнтези, фантастика</h5>
+        </td>
+    </tr>
+</table>
+{% endblock %}
