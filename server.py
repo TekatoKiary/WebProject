@@ -3,7 +3,7 @@ import os
 from flask import Flask, render_template, redirect
 from data.db import db_session
 
-db_session.global_init("data/db/mars_explorer.sqlite")
+db_session.global_init("data/db/db_files/explorer.sqlite")
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret-key'

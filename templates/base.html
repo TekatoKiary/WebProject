@@ -13,37 +13,28 @@
     {% block head %}{% endblock %}
 
 </head>
-<body style="background-image: url(../static/image/Fon.jpg);">
-<div style="border-style: outset; padding-top: 10px; padding-bottom: 10px;
-font-style: italic; background-color: white; margin-left: 10px; position: fixed; font-size: x-large;">&nbsp;
+<body style="background-image: url(../static/image/Fon.jpg); overflow: visible; width: 100%; height: 100%; ">
+<div class="icon">&nbsp;
     Книжное Мировоззрение &nbsp;
 </div>
+<nav class="navigation">
 
-<table style="width: 150px; height: 200px; position: absolute; top: 80px; left: 8px; font-size: 1.5em;">
+    <a class="btn btn-danger main_buttons">Профиль</a>
 
-    <tbody>
-    <tr>
-        <td>
-            <a class="btn btn-danger main_buttons">Профиль</a>
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <a class="btn btn-danger main_buttons">Друзья</a>
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <a class="btn btn-danger main_buttons">Рандомные книги</a>
-        </td>
-    </tr>
-    </tbody>
-</table>
+    <a class="btn btn-danger main_buttons">Друзья</a>
 
-<div style="border-style: ridge; position: fixed; padding-left: 40px; padding-top: 30px; left: 200px;
-background-color: white; top: 80px; width: 80%; height: 100%;">
+    <a class="btn btn-danger main_buttons">Моя Библиотека</a>
+
+    <a class="btn btn-danger main_buttons">Случайные книги</a>
+
+    <a class="btn btn-danger main_buttons">Настройки</a>
+
+</nav>
+
+<div class="main_content">
     {% block body %}{% endblock %}
 </div>
+
 
 </body>
 </html>
