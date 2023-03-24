@@ -17,9 +17,20 @@
 <div class="icon">&nbsp;
     Книжное Мировоззрение &nbsp;
 </div>
+<div class="user_name">
+    &nbsp;&nbsp;
+    {% if current_user.is_authenticated %}
+    Имя аккаунта: {{ current_user.surname }} {{ current_user.name }}
+    <a class="btn btn-danger main_buttons" href="logout" style="font-size:0.7em;">Выйти из аккаунта</a>
+    {% else %}
+    <a class="btn btn-success main_buttons" href="login_account" style="font-size:0.7em;">Войти в аккаунт</a>
+    <a class="btn btn-primary main_buttons" href="registration_account" style="font-size:0.7em;">Регистрация</a>
+    {% endif %}
+    &nbsp;&nbsp;
+</div>
 <nav class="navigation">
 
-    <a class="btn btn-danger main_buttons">Профиль</a>
+    <a class="btn btn-danger main_buttons" href="/profile">Профиль</a>
 
     <a class="btn btn-danger main_buttons">Друзья</a>
 
@@ -27,7 +38,7 @@
 
     <a class="btn btn-danger main_buttons">Случайные книги</a>
 
-    <a class="btn btn-danger main_buttons">Настройки</a>
+<!--    <a class="btn btn-danger main_buttons">Настройки</a>-->
 
 </nav>
 

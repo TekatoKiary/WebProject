@@ -10,12 +10,11 @@
 <table width="80%">
     <tr style="border: 2px dashed #000000;">
         <td width="70%">
-            <h1 class="name_user">Иванов Иван</h1>
+            <h1 class="name_user">{{ current_user.surname }} {{ current_user.name }}</h1>
             <br>
-            <h5>&nbsp;Возраст: 18</h5>
-            <h5>&nbsp;Любимые жанры книг: фэнтези, фантастика</h5>
-            <h5>&nbsp;Любимые книги: Война и мир, Метро 2033, Евгений Онегин</h5>
-            <h5>&nbsp;Email: ...@mail.ru</h5>
+            <h5>&nbsp;Возраст: {{ current_user.age }}</h5>
+            <h5>&nbsp;Любимые жанры книг: {{ current_user.like_genres_of_books }}</h5>
+            <h5>&nbsp;Email: {{ current_user.email }}</h5>
 <!--            Для работы scroll-->
             <br>
             <br>

@@ -34,3 +34,15 @@
 	top: 80px; 
 	width: 80%;
 }
+
+.user_name{
+	border-style: outset; 
+	padding-top: 10px; 
+	padding-bottom: 10px;
+    font-style: italic; 
+	position: absolute;
+	background-color: white;
+	font-size: large;
+	text-align: center;
+	margin-left: 60%;
+}

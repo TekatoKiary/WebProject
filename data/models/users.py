@@ -17,14 +17,14 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     email = sqlalchemy.Column(sqlalchemy.String, unique=True)
 
     like_genres_of_books = sqlalchemy.Column(sqlalchemy.String, default='')
-    like_books = sqlalchemy.Column(sqlalchemy.String, default='')
     hashed_password = sqlalchemy.Column(sqlalchemy.String, default='')
 
-    def __init__(self, surname, name, age, email):
+    def __init__(self, surname, name, age, email, like_genres_of_books):
         self.surname = surname
         self.name = name
         self.age = age
         self.email = email
+        self.like_genres_of_books = like_genres_of_books
 
     def set_password(self, password):
         self.hashed_password = generate_password_hash(password)
