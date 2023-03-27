@@ -16,8 +16,10 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     age = sqlalchemy.Column(sqlalchemy.Integer)
     email = sqlalchemy.Column(sqlalchemy.String, unique=True)
 
-    like_genres_of_books = sqlalchemy.Column(sqlalchemy.String, default='')
     hashed_password = sqlalchemy.Column(sqlalchemy.String, default='')
+
+    like_genres_of_books = sqlalchemy.Column(sqlalchemy.String, default='')
+    # books = sqlalchemy.Column(sqlalchemy.String, default='')
 
     def __init__(self, surname, name, age, email, like_genres_of_books):
         self.surname = surname
