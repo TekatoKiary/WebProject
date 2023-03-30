@@ -10,11 +10,11 @@
 <table width="80%">
     <tr style="border: 2px dashed #000000;">
         <td width="70%">
-            <h1 class="name_user">{{ current_user.surname }} {{ current_user.name }}</h1>
+            <h1 class="name_user">{{ user.surname }} {{ user.name }}</h1>
             <br>
-            <h5>&nbsp;Возраст: {{ current_user.age }}</h5>
+            <h5>&nbsp;Возраст: {{ user.age }}</h5>
             <h5>&nbsp;Любимые жанры книг: {{ like_genres }}</h5>
-            <h5>&nbsp;Email: {{ current_user.email }}</h5>
+            <h5>&nbsp;Email: {{ user.email }}</h5>
 
         </td>
         <td style="vertical-align: top;">
@@ -24,7 +24,9 @@
     <tr>
         <td>
             <br>
+            {% if user.id == current_user.id%}
             <a class="btn btn-danger">Редактировать профиль</a>
+            {% endif %}
         </td>
     </tr>
 </table>

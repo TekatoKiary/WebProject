@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block head %}
+{% endblock %}
+
+{% block body %}
+{% if is_change_book %}
+<h1>Изменение книги</h1>
+{% else %}
+<h1>Добавление книги</h1>
+{%endif%}
+<br>
+
+<form action="" method="post">
+    {{ form.hidden_tag() }}
+    <p>
+        {{ form.title.label }}<br>
+        {{ form.title(class="form-control", style="width:80%;") }}<br>
+        {% for error in form.title.errors %}
+    <p class="alert alert-danger" role="alert">
+        {{ error }}
+    </p>
+    {% endfor %}
+    </p>
+    <p>
+        {{ form.genre.label }}<br>
+        {{ form.genre(class="form-control", style="width:80%;") }}<br>
+        {% for error in form.genre.errors %}
+    <p class="alert alert-danger" role="alert">
+        {{ error }}
+    </p>
+    {% endfor %}
+    </p>
+    <p>
+        {{ form.brief_retelling.label }}<br>
+        {{ form.brief_retelling(class="form-control", style="width:80%; min-height: 300px;") }}<br>
+        {% for error in form.brief_retelling.errors %}
+    <p class="alert alert-danger" role="alert">
+        {{ error }}
+    </p>
+    {% endfor %}
+    </p>
+    <p>
+        {{ form.feedback.label }}<br>
+        {{ form.feedback(class="form-control", style="width:80%; min-height: 300px;") }}<br>
+        {% for error in form.feedback.errors %}
+    <p class="alert alert-danger" role="alert">
+        {{ error }}
+    </p>
+    {% endfor %}
+    </p>
+    <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+    {{message}}
+</form>
+{% endblock %}
