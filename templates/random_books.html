@@ -4,19 +4,10 @@
 {% endblock %}
 
 {% block body %}
-{% if user.id == current_user.id%}
-<a class="btn btn-danger" href="/add_book">Добавить книгу</a>
-{% endif %}
-<br><br>
 {% for book in books %}
 <form action="" style="border-style: solid; width: 85%; padding: 10px 3% 20px;">
     <h1>{{ book.title }}</h1>
     <br>
-    {% if user.id == current_user.id%}
-    <a class="btn btn-danger" href="/book/{{ book.id }}">Редактировать книгу</a>
-    <a class="btn btn-danger" href="/book_delete/{{ book.id }}">Удалить книгу</a>
-    <br> <br>
-    {% endif %}
     <h4>Автор статьи: {{ book.author }}</h4>
     <h4>Жанр: {{ book.genre }}</h4>
     <br>

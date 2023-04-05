@@ -1,5 +1,5 @@
 import datetime
-import os
+import random
 from flask import Flask, render_template, redirect, request, abort
 from flask_login import login_required, login_user, logout_user, LoginManager, current_user
 
@@ -40,7 +40,8 @@ def profile(username):
     like_genres_user = list(map(int, user_profile.like_genres_of_books.split(', ')))
     for genre in db_sess.query(Genre).filter(Genre.id.in_(like_genres_user)):
         like_genres.append(genre.name)
-    return render_template('profile.html', like_genres=', '.join(like_genres), user=user_profile)
+    return render_template('profile.html', like_genres=', '.join(like_genres), user=user_profile,
+                           title='Профиль читателя')
 
 
 @app.route('/registration_account', methods=['GET', 'POST'])
@@ -71,7 +72,7 @@ def registration_account():
         db_sess.commit()
         login_user(user, remember=True)
         return redirect('/profile/{current_user.surname}_{current_user.name}')
-    return render_template('registration_account.html', form=form)
+    return render_template('registration_account.html', form=form, title='Регистрация читателя')
 
 
 @login_manager.user_loader
@@ -89,8 +90,9 @@ def login_account():
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
             return redirect("/")
-        return render_template('login_account.html', message="Неправильный логин или пароль", form=form)
-    return render_template('login_account.html', form=form)
+        return render_template('login_account.html', message="Неправильный логин или пароль", form=form,
+                               title='Авторизация читателя')
+    return render_template('login_account.html', form=form, title='Авторизация читателя')
 
 
 @app.route('/logout')
@@ -102,12 +104,12 @@ def logout():
 
 @app.route(f'/my_library/<username>', methods=['GET', 'POST'])
 def my_library(username):
-    username = username.split('_')
+    surname, name = username.split('_')
     if request.method == 'POST':
         print(request.form['users_comment'])
     db_sess = db_session.create_session()
     books = []
-    user = db_sess.query(User).filter(User.surname == username[0], User.name == username[1])[0]
+    user = db_sess.query(User).filter(User.surname == surname, User.name == name)[0]
     for book in db_sess.query(Book).filter(Book.user_id == user.id):
         temp_dictionary = dict()
         temp_dictionary['id'] = book.id
@@ -120,7 +122,8 @@ def my_library(username):
             {'name_user': 'Tom Taylor', 'datetime_creation': datetime.datetime.now(),
              'content': 'That\'s the cool fairy tale'}]
         books.append(temp_dictionary)
-    return render_template('my_library.html', books=books, user=user)
+    username = ' '.join(username.split('_'))
+    return render_template('my_library.html', books=books, user=user, title=f'Библиотека читателя {username}')
 
 
 @app.route('/add_book', methods=['GET', 'POST'])
@@ -140,7 +143,7 @@ def add_book():
         db_sess.add(book)
         db_sess.commit()
         return redirect(f'/my_library/{current_user.surname}_{current_user.name}')
-    return render_template('book.html', form=form)
+    return render_template('book.html', form=form, title='Добавление книги')
 
 
 @app.route('/book/<int:id>', methods=['GET', 'POST'])
@@ -169,7 +172,7 @@ def edit_book(id):
             return redirect(f'/my_library/{current_user.surname}_{current_user.name}')
         else:
             abort(404)
-    return render_template('book.html', form=form)
+    return render_template('book.html', form=form, title='Изменение книги')
 
 
 @app.route('/book_delete/<int:id>', methods=['GET', 'POST'])
@@ -177,13 +180,32 @@ def edit_book(id):
 def book_delete(id):
     db_sess = db_session.create_session()
     book = db_sess.query(Book).filter(Book.id == id, Book.user_id == current_user.id).first()
-    print(id)
     if book:
         db_sess.delete(book)
         db_sess.commit()
     else:
         abort(404)
     return redirect(f'/my_library/{current_user.surname}_{current_user.name}')
+
+
+@app.route('/random_books')
+def random_books():
+    db_sess = db_session.create_session()
+    books = []
+    for book in db_sess.query(Book).all()[:50]:
+        temp_dictionary = dict()
+        temp_dictionary['id'] = book.id
+        temp_dictionary['title'] = book.title
+        temp_dictionary['genre'] = book.genre.name
+        temp_dictionary['brief_retelling'] = book.brief_retelling
+        temp_dictionary['feedback'] = book.feedback
+        temp_dictionary['author'] = str(book.user.surname) + ' ' + str(book.user.name)
+        temp_dictionary['comments'] = [
+            {'name_user': 'Tom Taylor', 'datetime_creation': datetime.datetime.now(),
+             'content': 'That\'s the cool fairy tale'}]
+        books.append(temp_dictionary)
+    random.shuffle(books)
+    return render_template('random_books.html', title='Случайные книги', books=books)
 
 
 if __name__ == '__main__':

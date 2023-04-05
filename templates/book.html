@@ -4,13 +4,6 @@
 {% endblock %}
 
 {% block body %}
-{% if is_change_book %}
-<h1>Изменение книги</h1>
-{% else %}
-<h1>Добавление книги</h1>
-{%endif%}
-<br>
-
 <form action="" method="post">
     {{ form.hidden_tag() }}
     <p>

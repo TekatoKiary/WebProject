@@ -9,7 +9,7 @@
           integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1"
           crossorigin="anonymous">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main_style.css') }}">
-    <title>Книжное Мировоззрение</title>
+    <title>{{ title }}</title>
     {% block head %}{% endblock %}
 
 </head>
@@ -37,13 +37,15 @@
     <a class="btn btn-danger main_buttons" href="/my_library/{{ current_user.surname }}_{{ current_user.name }}">
         Моя Библиотека</a>
 
-    <a class="btn btn-danger main_buttons">Случайные книги</a>
+    <a class="btn btn-danger main_buttons" href="/random_books">Случайные книги</a>
 
 <!--    <a class="btn btn-danger main_buttons">Настройки</a>-->
 
 </nav>
 
 <div class="main_content">
+    <h1>{{ title }}</h1>
+    <br>
     {% block body %}{% endblock %}
 </div>
 
