@@ -19,14 +19,20 @@
             <img src="static/image/Fon.jpg" class="image_user" align="right">
         </td>
     </tr>
+    {% if current_user.is_authenticated %}
     <tr>
         <td>
             <br>
-            {% if user.id == current_user.id%}
-            <a class="btn btn-danger">Редактировать профиль</a>
+            {% if user.id == current_user.id %}
+            <a class="btn btn-danger" href="/edit_account">Редактировать профиль</a>
+            {% elif not is_friend %}
+            <a class="btn btn-danger" href="/add_friend/{{ user.id }}">Добавить в друзья</a>
+            {% elif is_friend %}
+            <a class="btn btn-danger" href="/del_friend/{{ user.id }}">Удалить из друзей</a>
             {% endif %}
         </td>
     </tr>
+    {% endif %}
 </table>
 <br>
 {% endblock %}

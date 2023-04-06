@@ -5,7 +5,7 @@ from flask_login import login_required, login_user, logout_user, LoginManager, c
 
 from data.db import db_session
 from data.db.__all_models import User, Genre, Book
-from forms.registration_user import UserRegisterForm
+from forms.user_form import UserForm
 from forms.login import LoginForm
 from forms.add_book import BookForm
 
@@ -28,25 +28,32 @@ def index():
     if current_user.is_authenticated:
         return redirect(f'/profile/{current_user.surname}_{current_user.name}')
     else:
-        return render_template('base')
+        return render_template('base.html', title='Книжное Мировоззрение')
 
 
 @app.route('/profile/<username>')
 def profile(username):
-    username = username.split('_')
+    surname, name = username.split('_')
     db_sess = db_session.create_session()
-    user_profile = db_sess.query(User).filter(User.surname == username[0], User.name == username[1])[0]
+    user_profile = db_sess.query(User).filter(User.surname == surname, User.name == name)[0]
     like_genres = []
     like_genres_user = list(map(int, user_profile.like_genres_of_books.split(', ')))
     for genre in db_sess.query(Genre).filter(Genre.id.in_(like_genres_user)):
         like_genres.append(genre.name)
+
+    if current_user.friends and str(user_profile.id) in current_user.friends.split() and \
+            user_profile.id != current_user.id:
+        is_friend = True
+    else:
+        is_friend = False
+
     return render_template('profile.html', like_genres=', '.join(like_genres), user=user_profile,
-                           title='Профиль читателя')
+                           title='Профиль читателя', is_friend=is_friend)
 
 
 @app.route('/registration_account', methods=['GET', 'POST'])
 def registration_account():
-    form = UserRegisterForm()
+    form = UserForm()
     if form.validate_on_submit():
         if form.password.data != form.password_again.data:
             return render_template('registration_account.html', title='Регистрация',
@@ -93,6 +100,34 @@ def login_account():
         return render_template('login_account.html', message="Неправильный логин или пароль", form=form,
                                title='Авторизация читателя')
     return render_template('login_account.html', form=form, title='Авторизация читателя')
+
+
+@app.route('/edit_account', methods=['GET', 'POST'])
+@login_required
+def edit_account():
+    form = UserForm()
+    message = ''
+    form.password.data = form.password_again.data = '1'
+    if form.validate_on_submit():
+        db_sess = db_session.create_session()
+        user = db_sess.query(User).filter(User.id == current_user.id).first()
+
+        user.name = form.name.data
+        user.surname = form.surname.data
+        user.email = form.email.data
+        user.age = form.age.data
+
+        db_sess.commit()
+
+        message = 'Сохранено'
+        login_user(user, remember=True)
+
+    elif request.method == "GET":
+        form.name.data = current_user.name
+        form.surname.data = current_user.surname
+        form.email.data = current_user.email
+        form.age.data = current_user.age
+    return render_template('edit_account.html', form=form, message=message, title='Редактирование профиля')
 
 
 @app.route('/logout')
@@ -206,6 +241,41 @@ def random_books():
         books.append(temp_dictionary)
     random.shuffle(books)
     return render_template('random_books.html', title='Случайные книги', books=books)
+
+
+@app.route('/add_friend/<id_friend>')
+@login_required
+def add_friend(id_friend):
+    db_sess = db_session.create_session()
+
+    user = db_sess.query(User).filter(User.id == current_user.id).first()
+    user.friends = ' ' + str(id_friend)
+
+    db_sess.commit()
+    login_user(user, remember=True)
+
+    friend = db_sess.query(User).filter(User.id == id_friend).first()
+
+    return redirect(f'/profile/{friend.surname}_{friend.name}')
+
+
+@app.route('/del_friend/<id_friend>')
+@login_required
+def del_friend(id_friend):
+    db_sess = db_session.create_session()
+
+    user = db_sess.query(User).filter(User.id == current_user.id).first()
+
+    friends_group = user.friends.split()
+    del friends_group[friends_group.index(str(id_friend))]
+    user.friends = ' '.join(friends_group)
+
+    db_sess.commit()
+    login_user(user, remember=True)
+
+    friend = db_sess.query(User).filter(User.id == id_friend).first()
+
+    return redirect(f'/profile/{friend.surname}_{friend.name}')
 
 
 if __name__ == '__main__':

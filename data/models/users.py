@@ -19,7 +19,7 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     hashed_password = sqlalchemy.Column(sqlalchemy.String, default='')
 
     like_genres_of_books = sqlalchemy.Column(sqlalchemy.String, default='')
-    # books = sqlalchemy.Column(sqlalchemy.String, default='')
+    friends = sqlalchemy.Column(sqlalchemy.String, default='')
 
     def __init__(self, surname, name, age, email, like_genres_of_books):
         self.surname = surname
@@ -33,3 +33,6 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
 
     def check_password(self, password):
         return check_password_hash(self.hashed_password, password)
+
+    def add_friend(self, ind):
+        self.friends += ' ' + str(ind)
