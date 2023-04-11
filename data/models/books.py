@@ -16,8 +16,6 @@ class Book(SqlAlchemyBase, SerializerMixin):
     brief_retelling = sqlalchemy.Column(sqlalchemy.Text, default='')
     feedback = sqlalchemy.Column(sqlalchemy.Text, default='')
 
-    count_likes = sqlalchemy.Column(sqlalchemy.Integer, default=0)
-
     user = orm.relationship('User')
     genre = orm.relationship('Genre')
 

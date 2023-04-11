@@ -4,10 +4,12 @@
 {% endblock %}
 
 {% block body %}
+{% if books %}
 {% for book in books %}
 <div style="border-style: solid; width: 85%; padding: 10px 3% 20px;">
     <h1>{{ book.title }}</h1>
     <br>
+
     <h4>Автор статьи: {{ book.author }}</h4>
     <h4>Жанр: {{ book.genre }}</h4>
     <br>
@@ -20,15 +22,16 @@
     </h4>
     <br>
 
-    {% if not book.is_favorite %}
-    <a class="btn btn-danger" href="/add_favorite_book?page=random_books&user_id={{ current_user.id }}&book_id={{ book.id }}">Добавить в избранное</a>
-    {% else %}
-    <a class="btn btn-danger" href="/del_favorite_book?page=random_books&user_id={{ current_user.id }}&book_id={{ book.id }}">Удалить из избранных</a>
+    {% if book.is_favorite %}
+    <a class="btn btn-danger" href="/del_favorite_book?page=favorites&user_id={{ current_user.id }}&book_id={{ book.id }}">Удалить из избранных</a>
     {% endif %}
 
     <br>
 </div>
 <br><br>
 {% endfor %}
+{% else %}
+<h4>Увы, но у вас нет избранных постов</h4>
+{% endif %}
 <br>
 {% endblock %}

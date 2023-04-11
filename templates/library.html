@@ -8,10 +8,12 @@
 <a class="btn btn-danger" href="/add_book">Добавить книгу</a>
 {% endif %}
 <br><br>
+{% if books %}
 {% for book in books %}
-<form action="" style="border-style: solid; width: 85%; padding: 10px 3% 20px;">
+<div style="border-style: solid; width: 85%; padding: 10px 3% 20px;">
     <h1>{{ book.title }}</h1>
     <br>
+
     {% if user.id == current_user.id%}
     <a class="btn btn-danger" href="/book/{{ book.id }}">Редактировать книгу</a>
     <a class="btn btn-danger" href="/book_delete/{{ book.id }}">Удалить книгу</a>
@@ -28,20 +30,18 @@
         &nbsp;&nbsp;&nbsp;{{ book.feedback }}
     </h4>
     <br>
-    <h3>Комментарии:</h3>
-    <h4>Написать комментарий:<input type="text" style="width: 200px;">
-        <button class="btn btn-success main_buttons" style="font-size:0.7em;">Отправить</button>
-    </h4>
+
+    {% if not book.is_favorite %}
+    <a class="btn btn-danger" href="/add_favorite_book?page=library&user_id={{ user.id }}&book_id={{ book.id }}">Добавить в избранное</a>
+    {% else %}
+    <a class="btn btn-danger" href="/del_favorite_book?page=library&user_id={{ user.id }}&book_id={{ book.id }}">Удалить из избранных</a>
+    {% endif %}
     <br>
-    {% for comment in book.comments %}
-    <div style="background-color: lightgray; border: 1px solid #000000; padding-left:3px;">
-        <h4 style="font-size: 0.7em;">Время: {{ comment.datetime_creation }}</h4>
-        <h4>{{ comment.name_user }}:</h4>
-        <h5>{{ comment.content }}</h5>
-    </div>
-    {% endfor %}
-</form>
+</div>
 <br><br>
 {% endfor %}
+{% else %}
+<h4>Увы, но у данного пользователя нет постов о книге</h4>
+{% endif %}
 <br>
 {% endblock %}

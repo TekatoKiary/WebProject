@@ -1,4 +1,3 @@
-import datetime
 import random
 from flask import Flask, render_template, redirect, request, abort
 from flask_login import login_required, login_user, logout_user, LoginManager, current_user
@@ -16,12 +15,31 @@ app.config['SECRET_KEY'] = 'secret-key'
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+db_sess = db_session.create_session()
+
 
 # for i in ['Фэнтези', 'Фантастика', 'Детектив', 'Романтика', 'Наука', 'Психология']:
 #     db_sess = db_session.create_session()
 #     genre = Genre(i)
 #     db_sess.add(genre)
 #     db_sess.commit()
+
+def get_books(range_books=db_sess.query(Book).all()):
+    books = []
+    for book in range_books:
+        temp_dictionary = dict()
+        temp_dictionary['id'] = book.id
+        temp_dictionary['title'] = book.title
+        temp_dictionary['genre'] = book.genre.name
+        temp_dictionary['brief_retelling'] = book.brief_retelling
+        temp_dictionary['feedback'] = book.feedback
+        temp_dictionary['author'] = str(book.user.surname) + ' ' + str(book.user.name)
+        temp_dictionary['is_favorite'] = current_user.favorites and str(book.id) in current_user.favorites.split()
+
+        books.append(temp_dictionary)
+
+    return books
+
 
 @app.route('/')
 def index():
@@ -34,7 +52,6 @@ def index():
 @app.route('/profile/<username>')
 def profile(username):
     surname, name = username.split('_')
-    db_sess = db_session.create_session()
     user_profile = db_sess.query(User).filter(User.surname == surname, User.name == name)[0]
     like_genres = []
     like_genres_user = list(map(int, user_profile.like_genres_of_books.split(', ')))
@@ -59,7 +76,6 @@ def registration_account():
             return render_template('registration_account.html', title='Регистрация',
                                    form=form,
                                    message="Пароли не совпадают")
-        db_sess = db_session.create_session()
         if db_sess.query(User).filter(User.email == form.email.data).first():
             return render_template('registration_account.html', title='Регистрация',
                                    form=form,
@@ -84,7 +100,6 @@ def registration_account():
 
 @login_manager.user_loader
 def load_user(user_id):
-    db_sess = db_session.create_session()
     return db_sess.query(User).get(user_id)
 
 
@@ -92,7 +107,6 @@ def load_user(user_id):
 def login_account():
     form = LoginForm()
     if form.validate_on_submit():
-        db_sess = db_session.create_session()
         user = db_sess.query(User).filter(User.email == form.email.data).first()
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
@@ -109,7 +123,6 @@ def edit_account():
     message = ''
     form.password.data = form.password_again.data = '1'
     if form.validate_on_submit():
-        db_sess = db_session.create_session()
         user = db_sess.query(User).filter(User.id == current_user.id).first()
 
         user.name = form.name.data
@@ -137,27 +150,13 @@ def logout():
     return redirect("/")
 
 
-@app.route(f'/library/<username>', methods=['GET', 'POST'])
+@app.route(f'/library/<username>')
 def library(username):
     surname, name = username.split('_')
-    if request.method == 'POST':
-        print(request.form['users_comment'])
-    db_sess = db_session.create_session()
-    books = []
     user = db_sess.query(User).filter(User.surname == surname, User.name == name)[0]
-    for book in db_sess.query(Book).filter(Book.user_id == user.id):
-        temp_dictionary = dict()
-        temp_dictionary['id'] = book.id
-        temp_dictionary['title'] = book.title
-        temp_dictionary['genre'] = book.genre.name
-        temp_dictionary['brief_retelling'] = book.brief_retelling
-        temp_dictionary['feedback'] = book.feedback
-        temp_dictionary['author'] = str(book.user.surname) + ' ' + str(book.user.name)
-        temp_dictionary['comments'] = [
-            {'name_user': 'Tom Taylor', 'datetime_creation': datetime.datetime.now(),
-             'content': 'That\'s the cool fairy tale'}]
-        books.append(temp_dictionary)
-    username = ' '.join(username.split('_'))
+
+    books = get_books(db_sess.query(Book).filter(Book.user_id == user.id))
+
     return render_template('library.html', books=books, user=user, title=f'Библиотека читателя {username}')
 
 
@@ -166,7 +165,6 @@ def library(username):
 def add_book():
     form = BookForm('Добавить')
     if form.validate_on_submit():
-        db_sess = db_session.create_session()
         genre_id = db_sess.query(Genre).filter(form.genre.data == Genre.name)[0].id
         book = Book(
             user_id=current_user.id,
@@ -186,7 +184,6 @@ def add_book():
 def edit_book(id):
     form = BookForm('Сохранить')
     if request.method == "GET":
-        db_sess = db_session.create_session()
         book = db_sess.query(Book).filter(Book.id == id).first()
         if book:
             form.title.data = book.title
@@ -196,7 +193,6 @@ def edit_book(id):
         else:
             abort(404)
     if form.validate_on_submit():
-        db_sess = db_session.create_session()
         book = db_sess.query(Book).filter(Book.id == id, ).first()
         if book:
             book.title = form.title.data
@@ -213,7 +209,6 @@ def edit_book(id):
 @app.route('/book_delete/<int:id>', methods=['GET', 'POST'])
 @login_required
 def book_delete(id):
-    db_sess = db_session.create_session()
     book = db_sess.query(Book).filter(Book.id == id, Book.user_id == current_user.id).first()
     if book:
         db_sess.delete(book)
@@ -225,82 +220,125 @@ def book_delete(id):
 
 @app.route('/random_books')
 def random_books():
-    db_sess = db_session.create_session()
-    books = []
-    for book in db_sess.query(Book).all()[:50]:
-        temp_dictionary = dict()
-        temp_dictionary['id'] = book.id
-        temp_dictionary['title'] = book.title
-        temp_dictionary['genre'] = book.genre.name
-        temp_dictionary['brief_retelling'] = book.brief_retelling
-        temp_dictionary['feedback'] = book.feedback
-        temp_dictionary['author'] = str(book.user.surname) + ' ' + str(book.user.name)
-        temp_dictionary['comments'] = [
-            {'name_user': 'Tom Taylor', 'datetime_creation': datetime.datetime.now(),
-             'content': 'That\'s the cool fairy tale'}]
-        books.append(temp_dictionary)
+    books = get_books(db_sess.query(Book).all()[:50])
     random.shuffle(books)
     return render_template('random_books.html', title='Случайные книги', books=books)
 
 
-@app.route('/add_friend/<id_friend>')
+@app.route('/add_friend')
 @login_required
-def add_friend(id_friend):
-    db_sess = db_session.create_session()
+def add_friend():
+    friend_id = request.args.get('friend_id')
 
     user = db_sess.query(User).filter(User.id == current_user.id).first()
-    user.friends = ' ' + str(id_friend)
+    user.friends += ' ' + str(friend_id)
 
     db_sess.commit()
     login_user(user, remember=True)
 
-    friend = db_sess.query(User).filter(User.id == id_friend).first()
+    friend = db_sess.query(User).filter(User.id == friend_id).first()
 
     return redirect(f'/profile/{friend.surname}_{friend.name}')
 
 
-@app.route('/<page>/del_friend/<id_friend>')
+@app.route('/del_friend')
 @login_required
-def del_friend(page, id_friend):
-    db_sess = db_session.create_session()
+def del_friend():
+    friend_id = request.args.get('friend_id')
+    page = request.args.get('page')
 
     user = db_sess.query(User).filter(User.id == current_user.id).first()
 
     friends_group = user.friends.split()
-    del friends_group[friends_group.index(str(id_friend))]
+    del friends_group[friends_group.index(str(friend_id))]
     user.friends = ' '.join(friends_group)
 
     db_sess.commit()
     login_user(user, remember=True)
 
     if page == 'profile':
-        friend = db_sess.query(User).filter(User.id == id_friend).first()
+        friend = db_sess.query(User).filter(User.id == friend_id).first()
         return redirect(f'/profile/{friend.surname}_{friend.name}')
 
     return redirect(f'/friends/{user.surname}_{user.name}')
+
+
+@app.route('/add_favorite_book')
+@login_required
+def add_favorite_book():
+    book_id = request.args.get('book_id')
+    page = request.args.get('page')
+    user_id = request.args.get('user_id')
+
+    user = db_sess.query(User).filter(User.id == current_user.id).first()
+    user.favorites += ' ' + str(book_id)
+
+    db_sess.commit()
+    login_user(user, remember=True)
+    if page == 'library':
+        friend = db_sess.query(User).filter(User.id == user_id).first()
+        return redirect(f'/{page}/{friend.surname}_{friend.name}')
+
+    return redirect(f'/{page}')
+
+
+@app.route('/del_favorite_book')
+@login_required
+def del_favorite_book():
+    book_id = request.args.get('book_id')
+    page = request.args.get('page')
+    user_id = request.args.get('user_id')
+
+    user = db_sess.query(User).filter(User.id == current_user.id).first()
+
+    favorites_books_group = user.favorites.split()
+    del favorites_books_group[favorites_books_group.index(str(book_id))]
+    user.favorites = ' '.join(favorites_books_group)
+
+    db_sess.commit()
+    login_user(user, remember=True)
+
+    if page == 'library':
+        if int(user_id) != int(current_user.id):
+            user = db_sess.query(User).filter(User.id == user_id).first()
+
+        return redirect(f'/{page}/{user.surname}_{user.name}')
+
+    return redirect(f'/{page}')
+
 
 @app.route('/friends/<username>')
 @login_required
 def friends(username):
     surname, name = username.split('_')
-    db_sess = db_session.create_session()
+
     user = db_sess.query(User).filter(User.surname == surname, User.name == name).first()
     friends = []
-    for friend in db_sess.query(User).filter(User.id.in_(user.friends.split())):
-        temp_dictionary = dict()
-        temp_dictionary['id'] = friend.id
-        temp_dictionary['surname'] = friend.surname
-        temp_dictionary['name'] = friend.name
-        temp_dictionary['age'] = friend.age
-        temp_dictionary['email'] = friend.email
+    try:
+        for friend in db_sess.query(User).filter(User.id.in_(user.friends.split())):
+            temp_dictionary = dict()
+            temp_dictionary['id'] = friend.id
+            temp_dictionary['surname'] = friend.surname
+            temp_dictionary['name'] = friend.name
+            temp_dictionary['age'] = friend.age
+            temp_dictionary['email'] = friend.email
 
-        like_genres = []
-        like_genres_user = list(map(int, friend.like_genres_of_books.split(', ')))
-        for genre in db_sess.query(Genre).filter(Genre.id.in_(like_genres_user)):
-            like_genres.append(genre.name)
-        temp_dictionary['like_genres'] = like_genres
-        friends.append(temp_dictionary)
-    return render_template('friends.html', title=f'Друзья читателя {surname} {name}', friends=friends)
+            like_genres = []
+            like_genres_user = list(map(int, friend.like_genres_of_books.split(', ')))
+            for genre in db_sess.query(Genre).filter(Genre.id.in_(like_genres_user)):
+                like_genres.append(genre.name)
+            temp_dictionary['like_genres'] = like_genres
+            friends.append(temp_dictionary)
+        return render_template('friends.html', title=f'Друзья читателя {surname} {name}', friends=friends)
+    except AttributeError:
+        return render_template('friends.html', title=f'Друзья читателя {surname} {name}', friends=[])
+
+
+@app.route('/favorites')
+@login_required
+def favorites():
+    books = get_books(db_sess.query(Book).filter(Book.id.in_(current_user.favorites.split())))
+    return render_template('favorites.html', books=books)
 
 
 if __name__ == '__main__':

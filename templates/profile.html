@@ -12,6 +12,7 @@
 
             {% if user.id != current_user.id %}
             <a class="btn btn-danger" href="/library/{{ user.surname }}_{{ user.name }}">Библиотека пользователя</a><br><br>
+            <a class="btn btn-danger" href="/friends/{{ user.surname }}_{{ user.name }}">Друзья пользователя</a><br><br>
             {% endif %}
             <h5>&nbsp;Возраст: {{ user.age }}</h5>
             <h5>&nbsp;Любимые жанры книг: {{ like_genres }}</h5>
@@ -29,9 +30,9 @@
             {% if user.id == current_user.id %}
             <a class="btn btn-danger" href="/edit_account">Редактировать профиль</a>
             {% elif not is_friend %}
-            <a class="btn btn-danger" href="/add_friend/{{ user.id }}">Добавить в друзья </a>
+            <a class="btn btn-danger" href="/add_friend?friend_id={{ user.id }}">Добавить в друзья </a>
             {% elif is_friend %}
-            <a class="btn btn-danger" href="del_friend/{{ user.id }}">Удалить из друзей</a>
+            <a class="btn btn-danger" href="/del_friend?friend_id={{ user.id }}&page=profile">Удалить из друзей</a>
             {% endif %}
         </td>
     </tr>

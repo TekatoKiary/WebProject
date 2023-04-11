@@ -20,6 +20,7 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
 
     like_genres_of_books = sqlalchemy.Column(sqlalchemy.String, default='')
     friends = sqlalchemy.Column(sqlalchemy.String, default='')
+    favorites = sqlalchemy.Column(sqlalchemy.String, default='')
 
     def __init__(self, surname, name, age, email, like_genres_of_books):
         self.surname = surname
