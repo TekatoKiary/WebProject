@@ -7,7 +7,7 @@ from data.db import db_session
 from data.db.__all_models import User, Genre, Book
 from forms.user_form import UserForm
 from forms.login import LoginForm
-from forms.add_book import BookForm
+from forms.book_form import BookForm
 
 db_session.global_init("data/db/db_files/explorer.sqlite")
 
@@ -53,7 +53,7 @@ def profile(username):
 
 @app.route('/registration_account', methods=['GET', 'POST'])
 def registration_account():
-    form = UserForm()
+    form = UserForm('Зарегистрировать')
     if form.validate_on_submit():
         if form.password.data != form.password_again.data:
             return render_template('registration_account.html', title='Регистрация',
@@ -105,7 +105,7 @@ def login_account():
 @app.route('/edit_account', methods=['GET', 'POST'])
 @login_required
 def edit_account():
-    form = UserForm()
+    form = UserForm('Сохранить')
     message = ''
     form.password.data = form.password_again.data = '1'
     if form.validate_on_submit():
@@ -137,8 +137,8 @@ def logout():
     return redirect("/")
 
 
-@app.route(f'/my_library/<username>', methods=['GET', 'POST'])
-def my_library(username):
+@app.route(f'/library/<username>', methods=['GET', 'POST'])
+def library(username):
     surname, name = username.split('_')
     if request.method == 'POST':
         print(request.form['users_comment'])
@@ -158,13 +158,13 @@ def my_library(username):
              'content': 'That\'s the cool fairy tale'}]
         books.append(temp_dictionary)
     username = ' '.join(username.split('_'))
-    return render_template('my_library.html', books=books, user=user, title=f'Библиотека читателя {username}')
+    return render_template('library.html', books=books, user=user, title=f'Библиотека читателя {username}')
 
 
 @app.route('/add_book', methods=['GET', 'POST'])
 @login_required
 def add_book():
-    form = BookForm()
+    form = BookForm('Добавить')
     if form.validate_on_submit():
         db_sess = db_session.create_session()
         genre_id = db_sess.query(Genre).filter(form.genre.data == Genre.name)[0].id
@@ -184,7 +184,7 @@ def add_book():
 @app.route('/book/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_book(id):
-    form = BookForm()
+    form = BookForm('Сохранить')
     if request.method == "GET":
         db_sess = db_session.create_session()
         book = db_sess.query(Book).filter(Book.id == id).first()
@@ -259,9 +259,9 @@ def add_friend(id_friend):
     return redirect(f'/profile/{friend.surname}_{friend.name}')
 
 
-@app.route('/del_friend/<id_friend>')
+@app.route('/<page>/del_friend/<id_friend>')
 @login_required
-def del_friend(id_friend):
+def del_friend(page, id_friend):
     db_sess = db_session.create_session()
 
     user = db_sess.query(User).filter(User.id == current_user.id).first()
@@ -273,9 +273,34 @@ def del_friend(id_friend):
     db_sess.commit()
     login_user(user, remember=True)
 
-    friend = db_sess.query(User).filter(User.id == id_friend).first()
+    if page == 'profile':
+        friend = db_sess.query(User).filter(User.id == id_friend).first()
+        return redirect(f'/profile/{friend.surname}_{friend.name}')
 
-    return redirect(f'/profile/{friend.surname}_{friend.name}')
+    return redirect(f'/friends/{user.surname}_{user.name}')
+
+@app.route('/friends/<username>')
+@login_required
+def friends(username):
+    surname, name = username.split('_')
+    db_sess = db_session.create_session()
+    user = db_sess.query(User).filter(User.surname == surname, User.name == name).first()
+    friends = []
+    for friend in db_sess.query(User).filter(User.id.in_(user.friends.split())):
+        temp_dictionary = dict()
+        temp_dictionary['id'] = friend.id
+        temp_dictionary['surname'] = friend.surname
+        temp_dictionary['name'] = friend.name
+        temp_dictionary['age'] = friend.age
+        temp_dictionary['email'] = friend.email
+
+        like_genres = []
+        like_genres_user = list(map(int, friend.like_genres_of_books.split(', ')))
+        for genre in db_sess.query(Genre).filter(Genre.id.in_(like_genres_user)):
+            like_genres.append(genre.name)
+        temp_dictionary['like_genres'] = like_genres
+        friends.append(temp_dictionary)
+    return render_template('friends.html', title=f'Друзья читателя {surname} {name}', friends=friends)
 
 
 if __name__ == '__main__':

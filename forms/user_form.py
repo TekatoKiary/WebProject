@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import PasswordField, StringField, SubmitField, EmailField, IntegerField,  SelectMultipleField
+from wtforms import PasswordField, StringField, SubmitField, EmailField, IntegerField, SelectMultipleField
 from wtforms.validators import DataRequired
 
 
@@ -12,5 +12,9 @@ class UserForm(FlaskForm):
     age = IntegerField('Возраст', validators=[DataRequired()])
     like_genres_of_books = SelectMultipleField(
         choices=['Фэнтези', 'Фантастика', 'Детектив', 'Романтика', 'Наука', 'Психология'],
-        label='Любимые жанры книг: ', validators=[DataRequired()],)
+        label='Любимые жанры книг: ', validators=[DataRequired()], )
     submit = SubmitField('Зарегистрировать')
+
+    def __init__(self, button_text):
+        super(UserForm, self).__init__()
+        self.submit.name = button_text

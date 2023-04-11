@@ -10,3 +10,7 @@ class BookForm(FlaskForm):
     brief_retelling = TextAreaField('Краткий пересказ', validators=[DataRequired()])
     feedback = TextAreaField('Отзыв', validators=[DataRequired()])
     submit = SubmitField('Применить')
+
+    def __init__(self, button_text):
+        super(BookForm, self).__init__()
+        self.submit.name = button_text

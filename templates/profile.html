@@ -7,9 +7,12 @@
 {% block body %}
 <table width="80%">
     <tr style="border: 2px dashed #000000;">
-        <td width="70%">
+        <td width="70%" style="padding: 10px 3% 10px;">
             <h1 class="name_user">{{ user.surname }} {{ user.name }}</h1>
-            <br>
+
+            {% if user.id != current_user.id %}
+            <a class="btn btn-danger" href="/library/{{ user.surname }}_{{ user.name }}">Библиотека пользователя</a><br><br>
+            {% endif %}
             <h5>&nbsp;Возраст: {{ user.age }}</h5>
             <h5>&nbsp;Любимые жанры книг: {{ like_genres }}</h5>
             <h5>&nbsp;Email: {{ user.email }}</h5>
@@ -26,9 +29,9 @@
             {% if user.id == current_user.id %}
             <a class="btn btn-danger" href="/edit_account">Редактировать профиль</a>
             {% elif not is_friend %}
-            <a class="btn btn-danger" href="/add_friend/{{ user.id }}">Добавить в друзья</a>
+            <a class="btn btn-danger" href="/add_friend/{{ user.id }}">Добавить в друзья </a>
             {% elif is_friend %}
-            <a class="btn btn-danger" href="/del_friend/{{ user.id }}">Удалить из друзей</a>
+            <a class="btn btn-danger" href="del_friend/{{ user.id }}">Удалить из друзей</a>
             {% endif %}
         </td>
     </tr>

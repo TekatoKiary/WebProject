@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block head %}
+{% endblock %}
+
+{% block body %}
+{% for friend in friends %}
+<form action="" style="border-style: solid; width: 85%; padding: 10px 3% 20px;">
+    <h1><a href="/profile/{{ friend.surname }}_{{ friend.name }}" style="color: #000000">{{ friend.surname }} {{
+        friend.name }}</a></h1>
+    <br>
+    <h5>&nbsp;Возраст: {{ friend.age }}</h5>
+    <h5>&nbsp;Email: {{ friend.email }}</h5>
+    <h5>&nbsp;Любимые жанры книг: {% for i in friend.like_genres %}{{ i }}, {% endfor %}</h5>
+    <a class="btn btn-danger" href="del_friend/{{ friend.id }}">Удалить из друзей</a>
+</form>
+<br><br>
+{% endfor %}
+<br>
+{% endblock %}
