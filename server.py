@@ -7,6 +7,7 @@ from data.db.__all_models import User, Genre, Book
 from forms.user_form import UserForm
 from forms.login import LoginForm
 from forms.book_form import BookForm
+from forms.seacrh_form import SearchForm
 
 db_session.global_init("data/db/db_files/explorer.sqlite")
 
@@ -41,6 +42,30 @@ def get_books(range_books=db_sess.query(Book).all()):
     return books
 
 
+def get_users(range_users=db_sess.query(User).all()):
+    users = []
+    for user in range_users:
+        temp_dictionary = dict()
+        temp_dictionary['id'] = user.id
+        temp_dictionary['surname'] = user.surname
+        temp_dictionary['name'] = user.name
+        temp_dictionary['age'] = user.age
+        temp_dictionary['email'] = user.email
+
+        like_genres = []
+        like_genres_user = list(map(int, user.like_genres_of_books.split(', ')))
+        for genre in db_sess.query(Genre).filter(Genre.id.in_(like_genres_user)):
+            like_genres.append(genre.name)
+        temp_dictionary['like_genres'] = like_genres
+
+        temp_dictionary['is_friend'] = current_user.friends and str(user.id) in current_user.friends.split() and \
+                                       user.id != current_user.id
+
+        users.append(temp_dictionary)
+
+    return users
+
+
 @app.route('/')
 def index():
     if current_user.is_authenticated:
@@ -52,20 +77,10 @@ def index():
 @app.route('/profile/<username>')
 def profile(username):
     surname, name = username.split('_')
-    user_profile = db_sess.query(User).filter(User.surname == surname, User.name == name)[0]
-    like_genres = []
-    like_genres_user = list(map(int, user_profile.like_genres_of_books.split(', ')))
-    for genre in db_sess.query(Genre).filter(Genre.id.in_(like_genres_user)):
-        like_genres.append(genre.name)
+    user_profile = get_users([db_sess.query(User).filter(User.surname == surname, User.name == name)[0]])[0]
 
-    if current_user.friends and str(user_profile.id) in current_user.friends.split() and \
-            user_profile.id != current_user.id:
-        is_friend = True
-    else:
-        is_friend = False
-
-    return render_template('profile.html', like_genres=', '.join(like_genres), user=user_profile,
-                           title='Профиль читателя', is_friend=is_friend)
+    user_profile['like_genres'] = ', '.join(user_profile['like_genres'])
+    return render_template('profile.html', user=user_profile, title='Профиль читателя')
 
 
 @app.route('/registration_account', methods=['GET', 'POST'])
@@ -229,6 +244,7 @@ def random_books():
 @login_required
 def add_friend():
     friend_id = request.args.get('friend_id')
+    page = request.args.get('page')
 
     user = db_sess.query(User).filter(User.id == current_user.id).first()
     user.friends += ' ' + str(friend_id)
@@ -237,6 +253,9 @@ def add_friend():
     login_user(user, remember=True)
 
     friend = db_sess.query(User).filter(User.id == friend_id).first()
+
+    if page == 'search':
+        return redirect('/search')
 
     return redirect(f'/profile/{friend.surname}_{friend.name}')
 
@@ -259,6 +278,8 @@ def del_friend():
     if page == 'profile':
         friend = db_sess.query(User).filter(User.id == friend_id).first()
         return redirect(f'/profile/{friend.surname}_{friend.name}')
+    elif page == 'search':
+        return redirect('/search')
 
     return redirect(f'/friends/{user.surname}_{user.name}')
 
@@ -315,20 +336,7 @@ def friends(username):
     user = db_sess.query(User).filter(User.surname == surname, User.name == name).first()
     friends = []
     try:
-        for friend in db_sess.query(User).filter(User.id.in_(user.friends.split())):
-            temp_dictionary = dict()
-            temp_dictionary['id'] = friend.id
-            temp_dictionary['surname'] = friend.surname
-            temp_dictionary['name'] = friend.name
-            temp_dictionary['age'] = friend.age
-            temp_dictionary['email'] = friend.email
-
-            like_genres = []
-            like_genres_user = list(map(int, friend.like_genres_of_books.split(', ')))
-            for genre in db_sess.query(Genre).filter(Genre.id.in_(like_genres_user)):
-                like_genres.append(genre.name)
-            temp_dictionary['like_genres'] = like_genres
-            friends.append(temp_dictionary)
+        friends = get_users(db_sess.query(User).filter(User.id.in_(user.friends.split())))
         return render_template('friends.html', title=f'Друзья читателя {surname} {name}', friends=friends)
     except AttributeError:
         return render_template('friends.html', title=f'Друзья читателя {surname} {name}', friends=[])
@@ -339,6 +347,33 @@ def friends(username):
 def favorites():
     books = get_books(db_sess.query(Book).filter(Book.id.in_(current_user.favorites.split())))
     return render_template('favorites.html', books=books)
+
+
+@app.route('/search', methods=['GET', 'POST'])
+@login_required
+def search():
+    form = SearchForm()
+    results = []
+    message = ''
+    people_or_books = None
+    if form.validate_on_submit() and form.user_text.data:
+        if form.people_or_books.data == 'Человека':
+            people_or_books = 'Человек'
+            for text in form.user_text.data.split():
+                text = f'%{text}%'
+                results.extend([i for i in db_sess.query(User).filter(User.surname.like(text) | User.name.like(text))])
+            results = get_users(results)
+        elif form.people_or_books.data == 'Книгу':
+            people_or_books = 'Книга'
+            for text in form.user_text.data.split():
+                text = f'%{text}%'
+                results.extend([i for i in db_sess.query(Book).filter(Book.title.like(text))])
+            results = get_books(results)
+        if not results:
+            message = 'К сожалению, поиск не дал результатов'
+
+    return render_template('search.html', title='Поисковик', form=form, results=results, message=message,
+                           people_or_books=people_or_books)
 
 
 if __name__ == '__main__':

@@ -15,7 +15,7 @@
             <a class="btn btn-danger" href="/friends/{{ user.surname }}_{{ user.name }}">Друзья пользователя</a><br><br>
             {% endif %}
             <h5>&nbsp;Возраст: {{ user.age }}</h5>
-            <h5>&nbsp;Любимые жанры книг: {{ like_genres }}</h5>
+            <h5>&nbsp;Любимые жанры книг: {{ user.like_genres }}</h5>
             <h5>&nbsp;Email: {{ user.email }}</h5>
 
         </td>
@@ -29,9 +29,9 @@
             <br>
             {% if user.id == current_user.id %}
             <a class="btn btn-danger" href="/edit_account">Редактировать профиль</a>
-            {% elif not is_friend %}
+            {% elif not user.is_friend %}
             <a class="btn btn-danger" href="/add_friend?friend_id={{ user.id }}">Добавить в друзья </a>
-            {% elif is_friend %}
+            {% elif user.is_friend %}
             <a class="btn btn-danger" href="/del_friend?friend_id={{ user.id }}&page=profile">Удалить из друзей</a>
             {% endif %}
         </td>

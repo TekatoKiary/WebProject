@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block head %}
+{% endblock %}
+
+{% block body %}
+
+<form action="" method="post">
+    {{ form.hidden_tag() }}
+    <p>
+        {{ form.user_text.label }}
+        {{ form.user_text(class="form-control", style="width:80%;") }}<br>
+        {% for error in form.user_text.errors %}
+    <p class="alert alert-danger" role="alert">
+        {{ error }}
+    </p>
+    {% endfor %}
+    </p>
+    <p>
+        {{ form.people_or_books.label }}<br>
+        {{ form.people_or_books(class="form-control", style="width:80%;") }}<br>
+        {% for error in form.people_or_books.errors %}
+    <p class="alert alert-danger" role="alert">
+        {{ error }}
+    </p>
+    {% endfor %}
+    </p>
+    <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+    {{ message }}<br><br>
+</form>
+{% if people_or_books == 'Человек' %}
+{% for user in results %}
+<form action="" style="border-style: solid; width: 85%; padding: 10px 3% 20px;">
+    <h1><a href="/profile/{{ user.surname }}_{{ user.name }}" style="color: #000000">{{ user.surname }} {{
+        user.name }}</a></h1>
+    <br>
+    <h5>&nbsp;Возраст: {{ user.age }}</h5>
+    <h5>&nbsp;Email: {{ user.email }}</h5>
+    <h5>&nbsp;Любимые жанры книг: {% for i in user.like_genres %}{{ i }}, {% endfor %}</h5>
+    {% if not user.is_friend %}
+    <a class="btn btn-danger" href="/add_friend?friend_id={{ user.id }}&page=search">Добавить в друзья </a>
+    {% elif user.is_friend %}
+    <a class="btn btn-danger" href="/del_friend?friend_id={{ user.id }}&page=search">Удалить из друзей</a>
+    {% endif %}
+</form>
+<br><br>
+{% endfor %}
+{% elif people_or_books == 'Книга' %}
+{% for book in results %}
+<div style="border-style: solid; width: 85%; padding: 10px 3% 20px;">
+    <h1>{{ book.title }}</h1>
+    <br>
+
+    <h4>Автор статьи: {{ book.author }}</h4>
+    <h4>Жанр: {{ book.genre }}</h4>
+    <br>
+    <h4 style="border: 2px dashed #000000; padding: 5px;white-space: pre-line;">&nbsp; Краткий пересказ:<br>
+
+        &nbsp;&nbsp;&nbsp;{{ book.brief_retelling }}</h4>
+    <br>
+    <h4 style="border: 2px dashed #000000; padding: 5px;white-space: pre-line;">&nbsp; Отзыв:<br>
+        &nbsp;&nbsp;&nbsp;{{ book.feedback }}
+    </h4>
+    <br>
+
+    {% if not book.is_favorite %}
+    <a class="btn btn-danger" href="/add_favorite_book?page=search&user_id={{ current_user.id }}&book_id={{ book.id }}">Добавить
+        в избранное</a>
+    {% else %}
+    <a class="btn btn-danger" href="/del_favorite_book?page=search&user_id={{ current_user.id }}&book_id={{ book.id }}">Удалить
+        из избранных</a>
+    {% endif %}
+    <br>
+</div>
+<br><br>
+{% endfor %}
+{% endif %}
+{% endblock %}
