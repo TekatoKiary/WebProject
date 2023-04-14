@@ -1,6 +1,8 @@
 import random
-from flask import Flask, render_template, redirect, request, abort
+import os
+from flask import Flask, render_template, redirect, request, abort, url_for
 from flask_login import login_required, login_user, logout_user, LoginManager, current_user
+from werkzeug.utils import secure_filename
 
 from data.db import db_session
 from data.db.__all_models import User, Genre, Book
@@ -78,9 +80,15 @@ def index():
 def profile(username):
     surname, name = username.split('_')
     user_profile = get_users([db_sess.query(User).filter(User.surname == surname, User.name == name)[0]])[0]
+    if os.access(f'static/image/users_icon/{user_profile["id"]}_{user_profile["surname"]}_{user_profile["name"]}.png',
+                 os.F_OK):
+        image = url_for('static', filename=f'image/users_icon/'
+                                           f'{user_profile["id"]}_{user_profile["surname"]}_{user_profile["name"]}.png')
+    else:
+        image = url_for('static', filename='image/users_icon/default.jpg')
 
     user_profile['like_genres'] = ', '.join(user_profile['like_genres'])
-    return render_template('profile.html', user=user_profile, title='Профиль читателя')
+    return render_template('profile.html', user=user_profile, title='Профиль читателя', image=image)
 
 
 @app.route('/registration_account', methods=['GET', 'POST'])
@@ -89,15 +97,15 @@ def registration_account():
     if form.validate_on_submit():
         if form.password.data != form.password_again.data:
             return render_template('registration_account.html', title='Регистрация',
-                                   form=form,
-                                   message="Пароли не совпадают")
+                                   form=form, message="Пароли не совпадают")
         if db_sess.query(User).filter(User.email == form.email.data).first():
             return render_template('registration_account.html', title='Регистрация',
                                    form=form,
                                    message="Такой пользователь уже есть")
         like_genres = []
-        for genre in db_sess.query(Genre).filter(Genre.genre_name.in_(form.like_genres_of_books.data)):
+        for genre in db_sess.query(Genre).filter(Genre.name.in_(form.like_genres_of_books.data)):
             like_genres.append(str(genre.id))
+
         user = User(
             surname=form.surname.data,
             name=form.name.data,
@@ -108,8 +116,12 @@ def registration_account():
         user.set_password(form.password.data)
         db_sess.add(user)
         db_sess.commit()
+
+        if form.file.data:
+            form.file.data.save('static/image/users_icon/' + f'{user.id}_{user.surname}_{user.name}.png')
+
         login_user(user, remember=True)
-        return redirect('/profile/{current_user.surname}_{current_user.name}')
+        return redirect(f'/profile/{form.surname.data}_{form.name.data}')
     return render_template('registration_account.html', form=form, title='Регистрация читателя')
 
 
@@ -146,6 +158,9 @@ def edit_account():
         user.age = form.age.data
 
         db_sess.commit()
+
+        if form.file.data:
+            form.file.data.save('static/image/users_icon/' + f'{user.id}_{user.surname}_{user.name}.png')
 
         message = 'Сохранено'
         login_user(user, remember=True)
@@ -334,7 +349,7 @@ def friends(username):
     surname, name = username.split('_')
 
     user = db_sess.query(User).filter(User.surname == surname, User.name == name).first()
-    friends = []
+
     try:
         friends = get_users(db_sess.query(User).filter(User.id.in_(user.friends.split())))
         return render_template('friends.html', title=f'Друзья читателя {surname} {name}', friends=friends)
