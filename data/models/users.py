@@ -22,12 +22,16 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     friends = sqlalchemy.Column(sqlalchemy.String, default='')
     favorites = sqlalchemy.Column(sqlalchemy.String, default='')
 
-    def __init__(self, surname, name, age, email, like_genres_of_books):
+    def __init__(self, surname, name, age, email, like_genres_of_books, favorites=None, friends=None):
         self.surname = surname
         self.name = name
         self.age = age
         self.email = email
         self.like_genres_of_books = like_genres_of_books
+        if favorites is not None:
+            self.favorites = favorites
+        if friends is not None:
+            self.friends = friends
 
     def set_password(self, password):
         self.hashed_password = generate_password_hash(password)

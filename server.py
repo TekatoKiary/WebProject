@@ -2,7 +2,7 @@ import random
 import os
 from flask import Flask, render_template, redirect, request, abort, url_for
 from flask_login import login_required, login_user, logout_user, LoginManager, current_user
-from werkzeug.utils import secure_filename
+from flask_restful import Api
 
 from data.db import db_session
 from data.db.__all_models import User, Genre, Book
@@ -10,13 +10,24 @@ from forms.user_form import UserForm
 from forms.login import LoginForm
 from forms.book_form import BookForm
 from forms.seacrh_form import SearchForm
+from data.resources import genres_resources, users_resources, books_resources
 
 db_session.global_init("data/db/db_files/explorer.sqlite")
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret-key'
+api = Api(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+api.add_resource(users_resources.UsersListResource, '/api/v2/users')
+api.add_resource(users_resources.UserResource, '/api/v2/users/<int:user_id>')
+
+api.add_resource(books_resources.BooksListResource, '/api/v2/books')
+api.add_resource(books_resources.BookResource, '/api/v2/books/<int:book_id>')
+
+api.add_resource(genres_resources.GenresListResource, '/api/v2/genres')
+api.add_resource(genres_resources.GenreResource, '/api/v2/genres/<int:genre_id>')
 
 db_sess = db_session.create_session()
 
@@ -157,6 +168,11 @@ def edit_account():
         user.email = form.email.data
         user.age = form.age.data
 
+        like_genres = []
+        for genre in db_sess.query(Genre).filter(Genre.name.in_(form.like_genres_of_books.data)):
+            like_genres.append(str(genre.id))
+        user.like_genres_of_books = ', '.join(like_genres)
+
         db_sess.commit()
 
         if form.file.data:
@@ -170,6 +186,12 @@ def edit_account():
         form.surname.data = current_user.surname
         form.email.data = current_user.email
         form.age.data = current_user.age
+
+        like_genres = []
+        like_genres_user = list(map(int, current_user.like_genres_of_books.split(', ')))
+        for genre in db_sess.query(Genre).filter(Genre.id.in_(like_genres_user)):
+            like_genres.append(genre.name)
+        form.like_genres_of_books.data = like_genres
     return render_template('edit_account.html', form=form, message=message, title='Редактирование профиля')
 
 
@@ -205,7 +227,7 @@ def add_book():
         )
         db_sess.add(book)
         db_sess.commit()
-        return redirect(f'/my_library/{current_user.surname}_{current_user.name}')
+        return redirect(f'/library/{current_user.surname}_{current_user.name}')
     return render_template('book.html', form=form, title='Добавление книги')
 
 
@@ -230,7 +252,7 @@ def edit_book(id):
             book.brief_retelling = form.brief_retelling.data
             book.feedback = form.feedback.data
             db_sess.commit()
-            return redirect(f'/my_library/{current_user.surname}_{current_user.name}')
+            return redirect(f'/library/{current_user.surname}_{current_user.name}')
         else:
             abort(404)
     return render_template('book.html', form=form, title='Изменение книги')
@@ -245,7 +267,7 @@ def book_delete(id):
         db_sess.commit()
     else:
         abort(404)
-    return redirect(f'/my_library/{current_user.surname}_{current_user.name}')
+    return redirect(f'/library/{current_user.surname}_{current_user.name}')
 
 
 @app.route('/random_books')

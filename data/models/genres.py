@@ -12,6 +12,3 @@ class Genre(SqlAlchemyBase, SerializerMixin):
 
     def __init__(self, genre_name):
         self.name = genre_name
-
-    def __repr__(self):
-        return f'<Genre> {self.id} {self.name}'

@@ -13,4 +13,4 @@ class BookForm(FlaskForm):
 
     def __init__(self, button_text):
         super(BookForm, self).__init__()
-        self.submit.name = button_text
+        self.submit.label.text = button_text
