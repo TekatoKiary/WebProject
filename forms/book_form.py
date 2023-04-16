@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, TextAreaField, SelectField
-from wtforms.validators import DataRequired
+from wtforms.validators import DataRequired, optional
 from data.db import db_session
 from data.models.genres import Genre
 
@@ -12,8 +12,8 @@ class BookForm(FlaskForm):
     title = StringField('Название книги', validators=[DataRequired()])
     genre = SelectField('Жанр', validators=[DataRequired()],
                         choices=[genre.name for genre in db_sess.query(Genre).all()])
-    brief_retelling = TextAreaField('Краткий пересказ', validators=[DataRequired()])
-    feedback = TextAreaField('Отзыв', validators=[DataRequired()])
+    brief_retelling = TextAreaField('Краткий пересказ', validators=[optional()])
+    feedback = TextAreaField('Отзыв', validators=[optional()])
     submit = SubmitField('Применить')
 
     def __init__(self, button_text):

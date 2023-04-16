@@ -1,12 +1,14 @@
 {% extends "base.html" %}
 
 {% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/favorites_style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/book_style.css') }}">
 {% endblock %}
 
 {% block body %}
 {% if books %}
 {% for book in books %}
-<div style="border-style: solid; width: 85%; padding: 10px 3% 20px;">
+<div class="favorites">
     <h1>{{ book.title }}</h1>
     <br>
 
@@ -15,11 +17,11 @@
 
     <h4>Жанр: {{ book.genre }}</h4>
     <br>
-    <h4 style="border: 2px dashed #000000; padding: 5px;white-space: pre-line;">&nbsp; Краткий пересказ:<br>
+    <h4 class="brief_retelling">&nbsp; Краткий пересказ:<br>
 
         &nbsp;&nbsp;&nbsp;{{ book.brief_retelling }}</h4>
     <br>
-    <h4 style="border: 2px dashed #000000; padding: 5px;white-space: pre-line;">&nbsp; Отзыв:<br>
+    <h4 class="feedback">&nbsp; Отзыв:<br>
         &nbsp;&nbsp;&nbsp;{{ book.feedback }}
     </h4>
     <br>

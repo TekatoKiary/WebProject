@@ -1,12 +1,13 @@
 {% extends "base.html" %}
 
 {% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/friends_style.css') }}">
 {% endblock %}
 
 {% block body %}
 {% if friends %}
 {% for friend in friends %}
-<form action="" style="border-style: solid; width: 85%; padding: 10px 3% 20px;">
+<div class="friends">
     <h1><a href="/profile/{{ friend.surname }}_{{ friend.name }}" style="color: #000000">{{ friend.surname }} {{
         friend.name }}</a></h1>
     <br>
@@ -14,7 +15,7 @@
     <h5>&nbsp;Email: {{ friend.email }}</h5>
     <h5>&nbsp;Любимые жанры книг: {% for i in friend.like_genres %}{{ i }}, {% endfor %}</h5>
     <a class="btn btn-danger" href="/del_friend?friend_id={{ friend.id }}&page=friends">Удалить из друзей</a>
-</form>
+</div>
 <br><br>
 {% endfor %}
 {% else %}

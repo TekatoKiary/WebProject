@@ -26,7 +26,8 @@ class GenreResource(Resource):
         genre = session.query(Genre).get(genre_id)
         for user in session.query(User).filter(User.like_genres.like(f'%{genre_id}%')):
             users_genres = user.like_genres.split()
-            user.like_genres = ' '.join(users_genres.pop(users_genres.index(str(genre_id))))
+            del users_genres[users_genres.index(str(genre_id))]
+            user.like_genres = ' '.join(users_genres)
         session.delete(genre)
         session.commit()
         return jsonify({'success': 'OK'})

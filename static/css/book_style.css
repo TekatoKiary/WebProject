@@ -1,0 +1,10 @@
+.brief_retelling{
+	border: 2px dashed #000000; 
+	padding: 5px;
+	white-space: pre-line;
+}
+.feedback{
+	border: 2px dashed #000000; 
+	padding: 5px;
+	white-space: pre-line;
+}

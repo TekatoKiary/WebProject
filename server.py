@@ -7,7 +7,7 @@ from flask_restful import Api
 from data.db import db_session
 from data.db.__all_models import User, Genre, Book
 from forms.user_form import UserForm
-from forms.login import LoginForm
+from forms.login_form import LoginForm
 from forms.book_form import BookForm
 from forms.seacrh_form import SearchForm
 from data.resources import genres_resources, users_resources, books_resources
@@ -210,11 +210,11 @@ def logout():
 @login_required
 def library(username):
     surname, name = username.split('_')
-    user = db_sess.query(User).filter(User.surname == surname, User.name == name)[0]
+    user = db_sess.query(User).filter(User.surname == surname, User.name == name).first()
 
     books = get_books(db_sess.query(Book).filter(Book.user_id == user.id))
 
-    return render_template('library.html', books=books, user=user, title=f'Библиотека читателя {username}')
+    return render_template('library.html', books=books, user=user, title=f'Библиотека читателя {surname} {name}')
 
 
 @app.route('/add_book', methods=['GET', 'POST'])
@@ -268,6 +268,10 @@ def edit_book(book_id):
 def book_delete(book_id):
     book = db_sess.query(Book).filter(Book.id == book_id, Book.user_id == current_user.id).first()
     if book:
+        for user in db_sess.query(User).filter(User.favorites.like(f'%{book_id}%')):
+            favorites_group = user.favorites.split()
+            del favorites_group[favorites_group.index(str(book_id))]
+            user.favorites = ' '.join(favorites_group)
         db_sess.delete(book)
         db_sess.commit()
     else:
@@ -278,9 +282,9 @@ def book_delete(book_id):
 @app.route('/random_books')
 @login_required
 def random_books():
-    books = get_books(db_sess.query(Book).all()[:50])
+    books = get_books(db_sess.query(Book).all())
     random.shuffle(books)
-    return render_template('random_books.html', title='Случайные книги', books=books)
+    return render_template('random_books.html', title='Случайные книги', books=books[:50])
 
 
 @app.route('/add_friend')
@@ -386,7 +390,7 @@ def friends(username):
 @login_required
 def favorites():
     books = get_books(db_sess.query(Book).filter(Book.id.in_(current_user.favorites.split())))
-    return render_template('favorites.html', books=books)
+    return render_template('favorites.html', books=books, title='Избранное')
 
 
 @app.route('/search', methods=['GET', 'POST'])

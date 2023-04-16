@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/book_style.css') }}">
 {% endblock %}
 
 {% block body %}
@@ -12,11 +13,11 @@
     <h4>Автор статьи: <a href="/profile/{{ user[0] }}_{{ user[1] }}" style="color: #000000">{{ book.author }}</a></h4>
     <h4>Жанр: {{ book.genre }}</h4>
     <br>
-    <h4 style="border: 2px dashed #000000; padding: 5px;white-space: pre-line;">&nbsp; Краткий пересказ:<br>
+    <h4 class="brief_retelling">&nbsp; Краткий пересказ:<br>
 
         &nbsp;&nbsp;&nbsp;{{ book.brief_retelling }}</h4>
     <br>
-    <h4 style="border: 2px dashed #000000; padding: 5px;white-space: pre-line;">&nbsp; Отзыв:<br>
+    <h4 class="feedback">&nbsp; Отзыв:<br>
         &nbsp;&nbsp;&nbsp;{{ book.feedback }}
     </h4>
     <br>
