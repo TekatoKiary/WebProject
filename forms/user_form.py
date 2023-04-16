@@ -2,6 +2,11 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField
 from wtforms import PasswordField, StringField, SubmitField, EmailField, IntegerField, SelectMultipleField, widgets
 from wtforms.validators import DataRequired, optional
+from data.db import db_session
+from data.models.genres import Genre
+
+db_session.global_init("data/db/db_files/explorer.sqlite")
+db_sess = db_session.create_session()
 
 
 class MultiCheckboxField(SelectMultipleField):
@@ -16,9 +21,9 @@ class UserForm(FlaskForm):
     surname = StringField('Фамилия пользователя', validators=[DataRequired()])
     name = StringField('Имя пользователя', validators=[DataRequired()])
     age = IntegerField('Возраст', validators=[DataRequired()])
-    like_genres_of_books = MultiCheckboxField(
-        choices=['Фэнтези', 'Фантастика', 'Детектив', 'Романтика', 'Наука', 'Психология'],
-        label='Любимые жанры книг: ', validators=[optional()],)
+    like_genres = MultiCheckboxField(
+        choices=[genre.name for genre in db_sess.query(Genre).all()],
+        label='Любимые жанры книг: ', validators=[optional()], )
 
     file = FileField('Ваша аватарка', validators=[optional()])
 

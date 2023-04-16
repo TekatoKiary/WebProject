@@ -13,6 +13,7 @@ from forms.seacrh_form import SearchForm
 from data.resources import genres_resources, users_resources, books_resources
 
 db_session.global_init("data/db/db_files/explorer.sqlite")
+db_sess = db_session.create_session()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret-key'
@@ -29,14 +30,6 @@ api.add_resource(books_resources.BookResource, '/api/v2/books/<int:book_id>')
 api.add_resource(genres_resources.GenresListResource, '/api/v2/genres')
 api.add_resource(genres_resources.GenreResource, '/api/v2/genres/<int:genre_id>')
 
-db_sess = db_session.create_session()
-
-
-# for i in ['Фэнтези', 'Фантастика', 'Детектив', 'Романтика', 'Наука', 'Психология']:
-#     db_sess = db_session.create_session()
-#     genre = Genre(i)
-#     db_sess.add(genre)
-#     db_sess.commit()
 
 def get_books(range_books=db_sess.query(Book).all()):
     books = []
@@ -47,7 +40,8 @@ def get_books(range_books=db_sess.query(Book).all()):
         temp_dictionary['genre'] = book.genre.name
         temp_dictionary['brief_retelling'] = book.brief_retelling
         temp_dictionary['feedback'] = book.feedback
-        temp_dictionary['author'] = str(book.user.surname) + ' ' + str(book.user.name)
+        temp_dictionary['author'] = book.user.surname + ' ' + book.user.name if book.user_id != -1 else \
+            'Удалённый Пользователь'
         temp_dictionary['is_favorite'] = current_user.favorites and str(book.id) in current_user.favorites.split()
 
         books.append(temp_dictionary)
@@ -65,18 +59,31 @@ def get_users(range_users=db_sess.query(User).all()):
         temp_dictionary['age'] = user.age
         temp_dictionary['email'] = user.email
 
-        like_genres = []
-        like_genres_user = list(map(int, user.like_genres_of_books.split(', ')))
-        for genre in db_sess.query(Genre).filter(Genre.id.in_(like_genres_user)):
-            like_genres.append(genre.name)
-        temp_dictionary['like_genres'] = like_genres
+        temp_dictionary['like_genres'] = get_genres(db_sess.query(Genre).filter(Genre.id.in_(user.like_genres.split())))
 
-        temp_dictionary['is_friend'] = current_user.friends and str(user.id) in current_user.friends.split() and \
-                                       user.id != current_user.id
+        temp_dictionary['is_friend'] = (current_user.friends and str(user.id) in current_user.friends.split() and
+                                        user.id != current_user.id)
 
         users.append(temp_dictionary)
 
     return users
+
+
+def get_genres(range_genres=db_sess.query(Genre).all(), get_name=True, get_id=False):
+    genres = []
+    for genre in range_genres:
+        if get_name and get_id:
+            genres.append((genre.id, genre.name))
+        elif get_name:
+            genres.append(genre.name)
+        else:
+            genres.append(genre.id)
+    return genres
+
+
+@app.errorhandler(401)
+def unauthorized(error):
+    return render_template('welcome.html', title='Добро Пожаловать в Книжное Мировоззрение')
 
 
 @app.route('/')
@@ -84,21 +91,23 @@ def index():
     if current_user.is_authenticated:
         return redirect(f'/profile/{current_user.surname}_{current_user.name}')
     else:
-        return render_template('base.html', title='Книжное Мировоззрение')
+        return render_template('welcome.html', title='Добро Пожаловать в Книжное Мировоззрение')
 
 
 @app.route('/profile/<username>')
+@login_required
 def profile(username):
     surname, name = username.split('_')
-    user_profile = get_users([db_sess.query(User).filter(User.surname == surname, User.name == name)[0]])[0]
+    user_profile = get_users([db_sess.query(User).filter(User.surname == surname, User.name == name).first()])[0]
     if os.access(f'static/image/users_icon/{user_profile["id"]}_{user_profile["surname"]}_{user_profile["name"]}.png',
                  os.F_OK):
-        image = url_for('static', filename=f'image/users_icon/'
-                                           f'{user_profile["id"]}_{user_profile["surname"]}_{user_profile["name"]}.png')
+        filename_image = f'image/users_icon/{user_profile["id"]}_{user_profile["surname"]}_{user_profile["name"]}.png'
     else:
-        image = url_for('static', filename='image/users_icon/default.jpg')
+        filename_image = 'image/users_icon/default.jpg'
 
+    image = url_for('static', filename=filename_image)
     user_profile['like_genres'] = ', '.join(user_profile['like_genres'])
+
     return render_template('profile.html', user=user_profile, title='Профиль читателя', image=image)
 
 
@@ -113,16 +122,15 @@ def registration_account():
             return render_template('registration_account.html', title='Регистрация',
                                    form=form,
                                    message="Такой пользователь уже есть")
-        like_genres = []
-        for genre in db_sess.query(Genre).filter(Genre.name.in_(form.like_genres_of_books.data)):
-            like_genres.append(str(genre.id))
+        like_genres = list(
+            map(str, get_genres(db_sess.query(Genre).filter(Genre.name.in_(form.like_genres.data)), False, True)))
 
         user = User(
             surname=form.surname.data,
             name=form.name.data,
             email=form.email.data,
             age=form.age.data,
-            like_genres_of_books=', '.join(like_genres)
+            like_genres=' '.join(like_genres)
         )
         user.set_password(form.password.data)
         db_sess.add(user)
@@ -168,10 +176,10 @@ def edit_account():
         user.email = form.email.data
         user.age = form.age.data
 
-        like_genres = []
-        for genre in db_sess.query(Genre).filter(Genre.name.in_(form.like_genres_of_books.data)):
-            like_genres.append(str(genre.id))
-        user.like_genres_of_books = ', '.join(like_genres)
+        like_genres = list(
+            map(str, get_genres(db_sess.query(Genre).filter(Genre.name.in_(form.like_genres.data)), False, True)))
+
+        user.like_genres = ' '.join(like_genres)
 
         db_sess.commit()
 
@@ -187,11 +195,7 @@ def edit_account():
         form.email.data = current_user.email
         form.age.data = current_user.age
 
-        like_genres = []
-        like_genres_user = list(map(int, current_user.like_genres_of_books.split(', ')))
-        for genre in db_sess.query(Genre).filter(Genre.id.in_(like_genres_user)):
-            like_genres.append(genre.name)
-        form.like_genres_of_books.data = like_genres
+        form.like_genres.data = get_genres(db_sess.query(Genre).filter(Genre.id.in_(current_user.like_genres.split())))
     return render_template('edit_account.html', form=form, message=message, title='Редактирование профиля')
 
 
@@ -203,6 +207,7 @@ def logout():
 
 
 @app.route(f'/library/<username>')
+@login_required
 def library(username):
     surname, name = username.split('_')
     user = db_sess.query(User).filter(User.surname == surname, User.name == name)[0]
@@ -231,12 +236,12 @@ def add_book():
     return render_template('book.html', form=form, title='Добавление книги')
 
 
-@app.route('/book/<int:id>', methods=['GET', 'POST'])
+@app.route('/book/<int:book_id>', methods=['GET', 'POST'])
 @login_required
-def edit_book(id):
+def edit_book(book_id):
     form = BookForm('Сохранить')
     if request.method == "GET":
-        book = db_sess.query(Book).filter(Book.id == id).first()
+        book = db_sess.query(Book).filter(Book.id == book_id).first()
         if book:
             form.title.data = book.title
             form.genre.data = book.genre.name
@@ -245,7 +250,7 @@ def edit_book(id):
         else:
             abort(404)
     if form.validate_on_submit():
-        book = db_sess.query(Book).filter(Book.id == id, ).first()
+        book = db_sess.query(Book).filter(Book.id == book_id, ).first()
         if book:
             book.title = form.title.data
             book.genre.name = form.genre.data
@@ -258,10 +263,10 @@ def edit_book(id):
     return render_template('book.html', form=form, title='Изменение книги')
 
 
-@app.route('/book_delete/<int:id>', methods=['GET', 'POST'])
+@app.route('/book_delete/<int:book_id>', methods=['GET', 'POST'])
 @login_required
-def book_delete(id):
-    book = db_sess.query(Book).filter(Book.id == id, Book.user_id == current_user.id).first()
+def book_delete(book_id):
+    book = db_sess.query(Book).filter(Book.id == book_id, Book.user_id == current_user.id).first()
     if book:
         db_sess.delete(book)
         db_sess.commit()
@@ -271,6 +276,7 @@ def book_delete(id):
 
 
 @app.route('/random_books')
+@login_required
 def random_books():
     books = get_books(db_sess.query(Book).all()[:50])
     random.shuffle(books)
@@ -283,11 +289,9 @@ def add_friend():
     friend_id = request.args.get('friend_id')
     page = request.args.get('page')
 
-    user = db_sess.query(User).filter(User.id == current_user.id).first()
-    user.friends += ' ' + str(friend_id)
+    current_user.add_friend(friend_id)
 
     db_sess.commit()
-    login_user(user, remember=True)
 
     friend = db_sess.query(User).filter(User.id == friend_id).first()
 
@@ -328,11 +332,10 @@ def add_favorite_book():
     page = request.args.get('page')
     user_id = request.args.get('user_id')
 
-    user = db_sess.query(User).filter(User.id == current_user.id).first()
-    user.favorites += ' ' + str(book_id)
+    current_user.favorites += ' ' + str(book_id)
 
     db_sess.commit()
-    login_user(user, remember=True)
+
     if page == 'library':
         friend = db_sess.query(User).filter(User.id == user_id).first()
         return redirect(f'/{page}/{friend.surname}_{friend.name}')
@@ -373,8 +376,8 @@ def friends(username):
     user = db_sess.query(User).filter(User.surname == surname, User.name == name).first()
 
     try:
-        friends = get_users(db_sess.query(User).filter(User.id.in_(user.friends.split())))
-        return render_template('friends.html', title=f'Друзья читателя {surname} {name}', friends=friends)
+        friends_list = get_users(db_sess.query(User).filter(User.id.in_(user.friends.split())))
+        return render_template('friends.html', title=f'Друзья читателя {surname} {name}', friends=friends_list)
     except AttributeError:
         return render_template('friends.html', title=f'Друзья читателя {surname} {name}', friends=[])
 

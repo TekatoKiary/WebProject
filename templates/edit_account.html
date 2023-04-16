@@ -43,9 +43,9 @@
     {% endfor %}
     </p>
     <p>
-        {{ form.like_genres_of_books.label }}<br>
-        {{ form.like_genres_of_books(class="form-control", style="width:80%; type:checkbox;") }}<br>
-        {% for error in form.like_genres_of_books.errors %}
+        {{ form.like_genres.label }}<br>
+        {{ form.like_genres(class="form-control", style="width:80%; type:checkbox;") }}<br>
+        {% for error in form.like_genres.errors %}
     <p class="alert alert-danger" role="alert">
         {{ error }}
     </p>

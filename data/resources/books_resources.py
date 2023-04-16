@@ -1,5 +1,6 @@
 from data.db import db_session
 from data.models.books import Book
+from data.models.users import User
 from flask_restful import abort, Resource
 from flask import jsonify
 from data.parsers.books_parser import parser
@@ -24,6 +25,9 @@ class BookResource(Resource):
         abort_if_book_not_found(book_id)
         session = db_session.create_session()
         book = session.query(Book).get(book_id)
+        for user in session.query(User).filter(User.favorites.like(f'%{book_id}%')):
+            favorites = user.favorites.split()
+            user.favorites = ' '.join(favorites.pop(favorites.index(str(book_id))))
         session.delete(book)
         session.commit()
         return jsonify({'success': 'OK'})

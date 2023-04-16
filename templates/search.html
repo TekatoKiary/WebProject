@@ -37,9 +37,9 @@
     <h5>&nbsp;Возраст: {{ user.age }}</h5>
     <h5>&nbsp;Email: {{ user.email }}</h5>
     <h5>&nbsp;Любимые жанры книг: {% for i in user.like_genres %}{{ i }}, {% endfor %}</h5>
-    {% if not user.is_friend %}
+    {% if current_user.id != user.id and not user.is_friend %}
     <a class="btn btn-danger" href="/add_friend?friend_id={{ user.id }}&page=search">Добавить в друзья </a>
-    {% elif user.is_friend %}
+    {% elif current_user.id != user.id and user.is_friend %}
     <a class="btn btn-danger" href="/del_friend?friend_id={{ user.id }}&page=search">Удалить из друзей</a>
     {% endif %}
 </form>
@@ -50,8 +50,8 @@
 <div style="border-style: solid; width: 85%; padding: 10px 3% 20px;">
     <h1>{{ book.title }}</h1>
     <br>
-
-    <h4>Автор статьи: {{ book.author }}</h4>
+    {% set user = book.author.split(' ')%}
+    <h4>Автор статьи: <a href="/profile/{{ user[0] }}_{{ user[1] }}" style="color: #000000">{{ book.author }}</a></h4>
     <h4>Жанр: {{ book.genre }}</h4>
     <br>
     <h4 style="border: 2px dashed #000000; padding: 5px;white-space: pre-line;">&nbsp; Краткий пересказ:<br>

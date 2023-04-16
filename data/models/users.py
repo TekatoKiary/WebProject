@@ -13,21 +13,21 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
 
     surname = sqlalchemy.Column(sqlalchemy.String)
     name = sqlalchemy.Column(sqlalchemy.String)
-    age = sqlalchemy.Column(sqlalchemy.Integer)
-    email = sqlalchemy.Column(sqlalchemy.String, unique=True)
+    age = sqlalchemy.Column(sqlalchemy.Integer, default='')
+    email = sqlalchemy.Column(sqlalchemy.String, unique=True, default='')
 
     hashed_password = sqlalchemy.Column(sqlalchemy.String, default='')
 
-    like_genres_of_books = sqlalchemy.Column(sqlalchemy.String, default='')
+    like_genres = sqlalchemy.Column(sqlalchemy.String, default='')
     friends = sqlalchemy.Column(sqlalchemy.String, default='')
     favorites = sqlalchemy.Column(sqlalchemy.String, default='')
 
-    def __init__(self, surname, name, age, email, like_genres_of_books, favorites=None, friends=None):
+    def __init__(self, surname, name, age, email, like_genres, favorites=None, friends=None):
         self.surname = surname
         self.name = name
         self.age = age
         self.email = email
-        self.like_genres_of_books = like_genres_of_books
+        self.like_genres = like_genres
         if favorites is not None:
             self.favorites = favorites
         if friends is not None:

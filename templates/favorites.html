@@ -10,7 +10,9 @@
     <h1>{{ book.title }}</h1>
     <br>
 
-    <h4>Автор статьи: {{ book.author }}</h4>
+    {% set user = book.author.split(' ')%}
+    <h4>Автор статьи: <a href="/profile/{{ user[0] }}_{{ user[1] }}" style="color: #000000">{{ book.author }}</a></h4>
+
     <h4>Жанр: {{ book.genre }}</h4>
     <br>
     <h4 style="border: 2px dashed #000000; padding: 5px;white-space: pre-line;">&nbsp; Краткий пересказ:<br>
@@ -23,7 +25,9 @@
     <br>
 
     {% if book.is_favorite %}
-    <a class="btn btn-danger" href="/del_favorite_book?page=favorites&user_id={{ current_user.id }}&book_id={{ book.id }}">Удалить из избранных</a>
+    <a class="btn btn-danger"
+       href="/del_favorite_book?page=favorites&user_id={{ current_user.id }}&book_id={{ book.id }}">Удалить из
+        избранных</a>
     {% endif %}
 
     <br>

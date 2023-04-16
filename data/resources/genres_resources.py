@@ -1,5 +1,6 @@
 from data.db import db_session
 from data.models.genres import Genre
+from data.models.users import User
 from flask_restful import abort, Resource
 from flask import jsonify
 from data.parsers.genres_parser import parser
@@ -23,6 +24,9 @@ class GenreResource(Resource):
         abort_if_genre_not_found(genre_id)
         session = db_session.create_session()
         genre = session.query(Genre).get(genre_id)
+        for user in session.query(User).filter(User.like_genres.like(f'%{genre_id}%')):
+            users_genres = user.like_genres.split()
+            user.like_genres = ' '.join(users_genres.pop(users_genres.index(str(genre_id))))
         session.delete(genre)
         session.commit()
         return jsonify({'success': 'OK'})

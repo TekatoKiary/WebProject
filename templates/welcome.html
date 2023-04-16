@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile_style.css') }}">
+{% endblock %}
+
+{% block body %}
+<table width="100%">
+    <tr>
+        <td width="45%">
+            <h3> Войдите в свой аккаунт</h3>
+            <a class="btn btn-success main_buttons" href="/login_account" style="font-size:0.7em;">Войти в аккаунт</a>
+        </td>
+        <td>
+            <h3>Или зарегистрируйтесь здесь</h3>
+            <a class="btn btn-primary main_buttons" href="/registration_account"
+               style="font-size:0.7em;">Регистрация</a>
+        </td>
+    </tr>
+</table>
+<br>
+{% endblock %}
