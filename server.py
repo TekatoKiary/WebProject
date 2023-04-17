@@ -287,22 +287,40 @@ def random_books():
     return render_template('random_books.html', title='Случайные книги', books=books[:50])
 
 
+@app.route('/friends/<username>')
+@login_required
+def friends(username):
+    surname, name = username.split('_')
+
+    user = db_sess.query(User).filter(User.surname == surname, User.name == name).first()
+
+    try:
+        friends_list = get_users(db_sess.query(User).filter(User.id.in_(user.friends.split())))
+        return render_template('friends.html', title=f'Друзья читателя {surname} {name}', friends=friends_list,
+                               user=user)
+    except AttributeError:
+        return render_template('friends.html', title=f'Друзья читателя {surname} {name}', friends=[], user=user)
+
+
 @app.route('/add_friend')
 @login_required
 def add_friend():
     friend_id = request.args.get('friend_id')
     page = request.args.get('page')
+    page_id = request.args.get('page_id')
 
     current_user.add_friend(friend_id)
 
     db_sess.commit()
-
-    friend = db_sess.query(User).filter(User.id == friend_id).first()
+    if page_id:
+        user = db_sess.query(User).filter(User.id == page_id).first()
+    else:
+        user = db_sess.query(User).filter(User.id == friend_id).first()
 
     if page == 'search':
         return redirect('/search')
 
-    return redirect(f'/profile/{friend.surname}_{friend.name}')
+    return redirect(f'/{page}/{user.surname}_{user.name}')
 
 
 @app.route('/del_friend')
@@ -310,6 +328,7 @@ def add_friend():
 def del_friend():
     friend_id = request.args.get('friend_id')
     page = request.args.get('page')
+    page_id = request.args.get('page_id')
 
     user = db_sess.query(User).filter(User.id == current_user.id).first()
 
@@ -320,13 +339,15 @@ def del_friend():
     db_sess.commit()
     login_user(user, remember=True)
 
-    if page == 'profile':
-        friend = db_sess.query(User).filter(User.id == friend_id).first()
-        return redirect(f'/profile/{friend.surname}_{friend.name}')
-    elif page == 'search':
+    if page_id:
+        user = db_sess.query(User).filter(User.id == page_id).first()
+    else:
+        user = db_sess.query(User).filter(User.id == friend_id).first()
+
+    if page == 'search':
         return redirect('/search')
 
-    return redirect(f'/friends/{user.surname}_{user.name}')
+    return redirect(f'/{page}/{user.surname}_{user.name}')
 
 
 @app.route('/add_favorite_book')
@@ -336,8 +357,7 @@ def add_favorite_book():
     page = request.args.get('page')
     user_id = request.args.get('user_id')
 
-    current_user.favorites += ' ' + str(book_id)
-
+    current_user.add_favorite_book(book_id)
     db_sess.commit()
 
     if page == 'library':
@@ -345,6 +365,13 @@ def add_favorite_book():
         return redirect(f'/{page}/{friend.surname}_{friend.name}')
 
     return redirect(f'/{page}')
+
+
+@app.route('/favorites')
+@login_required
+def favorites():
+    books = get_books(db_sess.query(Book).filter(Book.id.in_(current_user.favorites.split())))
+    return render_template('favorites.html', books=books, title='Избранное')
 
 
 @app.route('/del_favorite_book')
@@ -370,27 +397,6 @@ def del_favorite_book():
         return redirect(f'/{page}/{user.surname}_{user.name}')
 
     return redirect(f'/{page}')
-
-
-@app.route('/friends/<username>')
-@login_required
-def friends(username):
-    surname, name = username.split('_')
-
-    user = db_sess.query(User).filter(User.surname == surname, User.name == name).first()
-
-    try:
-        friends_list = get_users(db_sess.query(User).filter(User.id.in_(user.friends.split())))
-        return render_template('friends.html', title=f'Друзья читателя {surname} {name}', friends=friends_list)
-    except AttributeError:
-        return render_template('friends.html', title=f'Друзья читателя {surname} {name}', friends=[])
-
-
-@app.route('/favorites')
-@login_required
-def favorites():
-    books = get_books(db_sess.query(Book).filter(Book.id.in_(current_user.favorites.split())))
-    return render_template('favorites.html', books=books, title='Избранное')
 
 
 @app.route('/search', methods=['GET', 'POST'])

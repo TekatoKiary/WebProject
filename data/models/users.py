@@ -40,4 +40,13 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
         return check_password_hash(self.hashed_password, password)
 
     def add_friend(self, ind):
-        self.friends += ' ' + str(ind)
+        if self.friends:
+            self.friends += ' ' + str(ind)
+        else:
+            self.friends = str(ind)
+
+    def add_favorite_book(self, ind):
+        if self.favorites:
+            self.favorites += ' ' + str(ind)
+        else:
+            self.favorites = str(ind)

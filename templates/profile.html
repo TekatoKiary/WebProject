@@ -30,7 +30,7 @@
             {% if user.id == current_user.id %}
             <a class="btn btn-danger" href="/edit_account">Редактировать профиль</a>
             {% elif not user.is_friend %}
-            <a class="btn btn-danger" href="/add_friend?friend_id={{ user.id }}">Добавить в друзья </a>
+            <a class="btn btn-danger" href="/add_friend?friend_id={{ user.id }}&page=profile">Добавить в друзья </a>
             {% elif user.is_friend %}
             <a class="btn btn-danger" href="/del_friend?friend_id={{ user.id }}&page=profile">Удалить из друзей</a>
             {% endif %}

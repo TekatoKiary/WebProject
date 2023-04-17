@@ -14,7 +14,11 @@
     <h5>&nbsp;Возраст: {{ friend.age }}</h5>
     <h5>&nbsp;Email: {{ friend.email }}</h5>
     <h5>&nbsp;Любимые жанры книг: {% for i in friend.like_genres %}{{ i }}, {% endfor %}</h5>
-    <a class="btn btn-danger" href="/del_friend?friend_id={{ friend.id }}&page=friends">Удалить из друзей</a>
+    {% if current_user.id != friend.id and not friend.is_friend %}
+    <a class="btn btn-danger" href="/add_friend?friend_id={{ friend.id }}&page=friends&page_id={{ user.id }}">Добавить в друзья </a>
+    {% elif current_user.id != friend.id and friend.is_friend %}
+    <a class="btn btn-danger" href="/del_friend?friend_id={{ friend.id }}&page=friends&page_id={{ user.id }}">Удалить из друзей</a>
+    {% endif %}
 </div>
 <br><br>
 {% endfor %}
