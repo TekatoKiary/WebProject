@@ -3,7 +3,6 @@ import os
 from flask import Flask, render_template, redirect, request, abort, url_for
 from flask_login import login_required, login_user, logout_user, LoginManager, current_user
 from flask_restful import Api
-
 from data.db import db_session
 from data.db.__all_models import User, Genre, Book
 from forms.user_form import UserForm
@@ -176,10 +175,10 @@ def edit_account():
         user.email = form.email.data
         user.age = form.age.data
 
-        like_genres = list(
-            map(str, get_genres(db_sess.query(Genre).filter(Genre.name.in_(form.like_genres.data)), False, True)))
+        [user.del_like_genre(ind) for ind in user.like_genres.split()]
 
-        user.like_genres = ' '.join(like_genres)
+        [user.add_like_genre(ind) for ind in get_genres(db_sess.query(Genre).filter(Genre.name.in_(
+            form.like_genres.data)), False, True)]
 
         db_sess.commit()
 
@@ -269,9 +268,7 @@ def book_delete(book_id):
     book = db_sess.query(Book).filter(Book.id == book_id, Book.user_id == current_user.id).first()
     if book:
         for user in db_sess.query(User).filter(User.favorites.like(f'%{book_id}%')):
-            favorites_group = user.favorites.split()
-            del favorites_group[favorites_group.index(str(book_id))]
-            user.favorites = ' '.join(favorites_group)
+            user.del_favorite_book(book_id)
         db_sess.delete(book)
         db_sess.commit()
     else:
@@ -282,24 +279,20 @@ def book_delete(book_id):
 @app.route('/random_books')
 @login_required
 def random_books():
-    books = get_books(db_sess.query(Book).all())
+    books = db_sess.query(Book).all()
     random.shuffle(books)
-    return render_template('random_books.html', title='Случайные книги', books=books[:50])
+    return render_template('random_books.html', title='Случайные книги', books=get_books(books[:50]))
 
 
 @app.route('/friends/<username>')
 @login_required
 def friends(username):
     surname, name = username.split('_')
-
     user = db_sess.query(User).filter(User.surname == surname, User.name == name).first()
 
-    try:
-        friends_list = get_users(db_sess.query(User).filter(User.id.in_(user.friends.split())))
-        return render_template('friends.html', title=f'Друзья читателя {surname} {name}', friends=friends_list,
-                               user=user)
-    except AttributeError:
-        return render_template('friends.html', title=f'Друзья читателя {surname} {name}', friends=[], user=user)
+    friends_list = get_users(db_sess.query(User).filter(User.id.in_(user.friends.split())))
+    return render_template('friends.html', title=f'Друзья читателя {surname} {name}', friends=friends_list,
+                           user=user)
 
 
 @app.route('/add_friend')
@@ -310,15 +303,15 @@ def add_friend():
     page_id = request.args.get('page_id')
 
     current_user.add_friend(friend_id)
-
     db_sess.commit()
+
+    if page == 'search':
+        return redirect('/search')
+
     if page_id:
         user = db_sess.query(User).filter(User.id == page_id).first()
     else:
         user = db_sess.query(User).filter(User.id == friend_id).first()
-
-    if page == 'search':
-        return redirect('/search')
 
     return redirect(f'/{page}/{user.surname}_{user.name}')
 
@@ -330,24 +323,25 @@ def del_friend():
     page = request.args.get('page')
     page_id = request.args.get('page_id')
 
-    user = db_sess.query(User).filter(User.id == current_user.id).first()
-
-    friends_group = user.friends.split()
-    del friends_group[friends_group.index(str(friend_id))]
-    user.friends = ' '.join(friends_group)
-
+    current_user.del_friend(friend_id)
     db_sess.commit()
-    login_user(user, remember=True)
+
+    if page == 'search':
+        return redirect('/search')
 
     if page_id:
         user = db_sess.query(User).filter(User.id == page_id).first()
     else:
         user = db_sess.query(User).filter(User.id == friend_id).first()
 
-    if page == 'search':
-        return redirect('/search')
-
     return redirect(f'/{page}/{user.surname}_{user.name}')
+
+
+@app.route('/favorites')
+@login_required
+def favorites():
+    books = get_books(db_sess.query(Book).filter(Book.id.in_(current_user.favorites.split())))
+    return render_template('favorites.html', books=books, title='Избранное')
 
 
 @app.route('/add_favorite_book')
@@ -367,13 +361,6 @@ def add_favorite_book():
     return redirect(f'/{page}')
 
 
-@app.route('/favorites')
-@login_required
-def favorites():
-    books = get_books(db_sess.query(Book).filter(Book.id.in_(current_user.favorites.split())))
-    return render_template('favorites.html', books=books, title='Избранное')
-
-
 @app.route('/del_favorite_book')
 @login_required
 def del_favorite_book():
@@ -381,19 +368,11 @@ def del_favorite_book():
     page = request.args.get('page')
     user_id = request.args.get('user_id')
 
-    user = db_sess.query(User).filter(User.id == current_user.id).first()
-
-    favorites_books_group = user.favorites.split()
-    del favorites_books_group[favorites_books_group.index(str(book_id))]
-    user.favorites = ' '.join(favorites_books_group)
-
+    current_user.del_favorite_book(book_id)
     db_sess.commit()
-    login_user(user, remember=True)
 
     if page == 'library':
-        if int(user_id) != int(current_user.id):
-            user = db_sess.query(User).filter(User.id == user_id).first()
-
+        user = db_sess.query(User).filter(User.id == user_id).first()
         return redirect(f'/{page}/{user.surname}_{user.name}')
 
     return redirect(f'/{page}')
@@ -409,16 +388,15 @@ def search():
     if form.validate_on_submit() and form.user_text.data:
         if form.people_or_books.data == 'Человека':
             people_or_books = 'Человек'
-            for text in form.user_text.data.split():
-                text = f'%{text}%'
-                results.extend([i for i in db_sess.query(User).filter(User.surname.like(text) | User.name.like(text))])
-            results = get_users(results)
+            results = get_users(
+                list(set(i for text in list(set(form.user_text.data.split()))
+                         for i in db_sess.query(User).all()
+                         if text.lower() in i.name.lower() + ' ' + i.surname.lower())))
         elif form.people_or_books.data == 'Книгу':
             people_or_books = 'Книга'
-            for text in form.user_text.data.split():
-                text = f'%{text}%'
-                results.extend([i for i in db_sess.query(Book).filter(Book.title.like(text))])
-            results = get_books(results)
+            results = get_books(list(set(i for text in list(set(form.user_text.data.split()))
+                                         for i in db_sess.query(Book).all()
+                                         if text.lower() in i.title.lower())))
         if not results:
             message = 'К сожалению, поиск не дал результатов'
 

@@ -26,9 +26,7 @@ class BookResource(Resource):
         session = db_session.create_session()
         book = session.query(Book).get(book_id)
         for user in session.query(User).filter(User.favorites.like(f'%{book_id}%')):
-            favorites = user.favorites.split()
-            del favorites[favorites.index(str(book_id))]
-            user.favorites = ' '.join(favorites)
+            user.del_favorite_book(book_id)
         session.delete(book)
         session.commit()
         return jsonify({'success': 'OK'})

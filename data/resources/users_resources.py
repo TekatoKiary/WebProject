@@ -28,9 +28,7 @@ class UserResource(Resource):
         user = session.query(User).get(user_id)
 
         for friend in session.query(User).filter(User.friends.like(f'%{user_id}%')):
-            friends = friend.friends.split()
-            del friends[friends.index(str(user_id))]
-            friend.friends = ' '.join(friends)
+            friend.del_friend(user_id)
 
         for book in session.query(Book).filter(Book.user_id == user_id):
             book.user_id = -1
@@ -52,29 +50,23 @@ class UsersListResource(Resource):
         args = parser.parse_args()
         session = db_session.create_session()
 
-        if type(args['friends']) == list:
-            friends = ', '.join(args['friends'])
-        else:
-            friends = args['friends']
-        if type(args['favorites']) == list:
-            favorites = ', '.join(args['favorites'])
-        else:
-            favorites = args['favorites']
-        if type(args['like_genres']) == list:
-            like_genres = ', '.join(args['like_genres'])
-        else:
-            like_genres = args['like_genres']
-
         user = User(
             surname=args['surname'],
             name=args['name'],
             age=args['age'],
-            favorites=favorites,
-            friends=friends,
-            like_genres=like_genres,
+            favorites=get_list_arguments(args['favorites']),
+            friends=get_list_arguments(args['friends']),
+            like_genres=get_list_arguments(args['like_genres']),
             email=args['email'],
         )
         user.set_password(args['hashed_password'])
         session.add(user)
         session.commit()
         return jsonify({'success': 'OK'})
+
+
+def get_list_arguments(element):
+    if type(element) == list:
+        return ', '.join(element)
+
+    return element
